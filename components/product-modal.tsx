@@ -66,22 +66,24 @@ export function ProductModal({ plant, isOpen, onClose }: ProductModalProps) {
     return () => document.removeEventListener("keydown", handleEsc)
   }, [onClose])
 
-  if (!isOpen || !plant) return null
+  
 
-  const bookedDates = getBookedDatesForPlant(plant.id)
+  const bookedDates = plant ? getBookedDatesForPlant(plant.id) : []
 
-  /* ================= LOGIC ================= */
+const rentalDays = useMemo(() => {
+  if (!startDate || !endDate) return 0
+  const diff = Math.abs(endDate.getTime() - startDate.getTime())
+  return Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1
+}, [startDate, endDate])
 
-  const rentalDays = useMemo(() => {
-    if (!startDate || !endDate) return 0
-    const diff = Math.abs(endDate.getTime() - startDate.getTime())
-    return Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1
-  }, [startDate, endDate])
+const discount = useMemo(() => {
+  const slab = DISCOUNT_SLABS.find((s) => rentalDays >= s.days)
+  return slab ? slab.discount : 0
+}, [rentalDays])
 
-  const discount = useMemo(() => {
-    const slab = DISCOUNT_SLABS.find((s) => rentalDays >= s.days)
-    return slab ? slab.discount : 0
-  }, [rentalDays])
+// then conditionally render
+if (!isOpen || !plant) return null
+
 
   const adjustedPricePerDay = Math.round(
     plant.pricePerDay * selectedSize.priceMultiplier
