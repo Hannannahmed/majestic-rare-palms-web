@@ -8,6 +8,7 @@ import { ProductCards } from "@/components/product-cards"
 import { ProductModal } from "@/components/product-modal"
 import { CartProvider } from "@/context/cart-context"
 import type { Plant } from "@/lib/data"
+import { ToasterContainer } from "@/components/global/ToastContainer"
 
 export default function Home() {
   const [selectedPlant, setSelectedPlant] = useState<Plant | null>(null)
@@ -28,6 +29,7 @@ export default function Home() {
 
   return (
     <CartProvider>
+      <ToasterContainer />
       <main className="min-h-screen bg-background">
         <Navbar />
         <HeroSlider />

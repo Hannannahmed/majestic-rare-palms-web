@@ -1,7 +1,9 @@
 "use client"
 
-import { plants, type Plant } from "@/lib/data"
+import { useEffect, useState } from "react"
+import type { Plant } from "@/lib/data"
 import { Card, CardContent } from "@/components/ui/card"
+import axiosInterceptor from "@/lib/axiosInterceptor"
 
 interface ProductCardsProps {
   onPlantClick: (plant: Plant) => void
@@ -21,7 +23,34 @@ function getCategoryTitle(category?: string): string {
 }
 
 export function ProductCards({ onPlantClick, category }: ProductCardsProps) {
-  const filteredPlants = category ? plants.filter((p) => p.category === category || p.subcategory === category) : plants
+  const [plants, setPlants] = useState<Plant[]>([])
+
+  useEffect(() => {
+    const fetchPlants = async () => {
+      const res = await axiosInterceptor.get("/plants")
+
+      const apiPlants = res.data.data.plants.map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        image: p.images?.[0],
+        shortDescription: p.description,
+        fullDescription: p.description,
+        category: p.category.toLowerCase(),
+        subcategory: p.category.toLowerCase(),
+        pricePerDay: p.rentPrice,
+      }))
+
+      setPlants(apiPlants)
+    }
+
+    fetchPlants()
+  }, [])
+
+  const filteredPlants = category
+    ? plants.filter(
+        (p) => p.category === category || p.subcategory === category
+      )
+    : plants
 
   return (
     <section id="products" className="py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-background">
@@ -62,7 +91,7 @@ export function ProductCards({ onPlantClick, category }: ProductCardsProps) {
                   <span className="absolute top-3 left-3 bg-card/90 text-card-foreground text-xs font-medium px-2 py-1 rounded-full capitalize">
                     {plant.subcategory || plant.category}
                   </span>
-                  <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div  className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <span className="inline-block bg-primary text-primary-foreground text-sm font-medium px-4 py-2 rounded-full">
                       View Details
                     </span>
@@ -72,8 +101,12 @@ export function ProductCards({ onPlantClick, category }: ProductCardsProps) {
                   <h3 className="font-serif text-xl font-semibold text-card-foreground mb-2 group-hover:text-primary transition-colors">
                     {plant.name}
                   </h3>
-                  <p className="text-muted-foreground text-sm mb-3 line-clamp-2">{plant.shortDescription}</p>
-                  <p className="text-primary font-semibold">From ${plant.pricePerDay}/day</p>
+                  <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
+                    {plant.shortDescription}
+                  </p>
+                  <p className="text-primary font-semibold">
+                    From ${plant.pricePerDay}/day
+                  </p>
                 </CardContent>
               </Card>
             ))

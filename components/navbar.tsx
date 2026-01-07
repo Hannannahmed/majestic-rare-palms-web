@@ -7,6 +7,8 @@ import { useCart } from "@/context/cart-context"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import { categories } from "@/lib/data"
+import axiosInterceptor from "@/lib/axiosInterceptor"
+import { ErrorToast, SuccessToast } from "./global/ToastContainer"
 
 const navLinks = [
   { name: "Home", href: "/" },
@@ -15,10 +17,20 @@ const navLinks = [
 ]
 
 export function Navbar() {
-  const { getCartCount, cartItems, removeFromCart, getCartTotal } = useCart()
+  const { getCartCount, cartItems, removeFromCart, getCartTotal,clearCart } = useCart()
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const cartCount = getCartCount()
+  const [showCustomerForm, setShowCustomerForm] = useState(false)
+  const [fullName, setFullName] = useState("")
+  const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
+  const [address, setAddress] = useState("")
+  const [city, setCity] = useState("")
+  const [state, setState] = useState("")
+  const [zip, setZip] = useState("")
+  const [country, setCountry] = useState("Pakistan")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const formatDateRange = (startDate: string, endDate: string) => {
     const start = new Date(startDate)
@@ -26,6 +38,44 @@ export function Navbar() {
     const options: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" }
     return `${start.toLocaleDateString("en-US", options)} - ${end.toLocaleDateString("en-US", options)}`
   }
+  const handleCustomerSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+  if (!fullName || !email || !phone || !address || !city || !state || !zip || !country) return
+
+  setIsSubmitting(true)
+
+  const payload = {
+    customerInfo: {
+      fullName,
+      email,
+      phone,
+      address: { fullAddress: address, city, state, zip, country },
+    },
+    items: cartItems.map(item => ({
+      plantId: item.plantId,
+      startDate: item.startDate,
+      endDate: item.endDate,
+    })),
+  }
+
+  try {
+    const res = await axiosInterceptor.post("/checkout/create-session", payload)
+
+    // Axios throws for non-2xx status, so res.ok is not needed
+    SuccessToast("Order successfully placed!")
+
+    
+    clearCart()
+    setShowCustomerForm(false)
+  } catch (err: any) {
+    console.error(err)
+    // Axios errors have response status/message
+    ErrorToast(err?.response?.data?.message || "Checkout failed, please try again")
+  } finally {
+    setIsSubmitting(false)
+  }
+}
+
 
   return (
     <nav className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border">
@@ -117,9 +167,9 @@ export function Navbar() {
                             <div className="flex-1 min-w-0">
                               <h4 className="font-medium text-card-foreground truncate">{item.plantName}</h4>
                               <p className="text-xs text-muted-foreground">
-                                {item.size.name} ({item.size.height})
+                                {/* {item.size.name} ({item.size.height}) */}
                               </p>
-                              <p className="text-xs text-muted-foreground">Pot: {item.pot.name}</p>
+                              {/* <p className="text-xs text-muted-foreground">Pot: {item.pot.name}</p> */}
                               <p className="text-sm text-muted-foreground">
                                 {formatDateRange(item.startDate, item.endDate)} ({item.rentalDays} days)
                               </p>
@@ -141,11 +191,16 @@ export function Navbar() {
                           <span>Total</span>
                           <span>${getCartTotal()}</span>
                         </div>
-                        <Link href="/checkout" onClick={() => setIsCartOpen(false)}>
-                          <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+                        <SheetTrigger asChild>
+                          <Button
+                            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                            disabled={cartCount === 0}
+                            onClick={()=>setShowCustomerForm(true)}
+                          >
                             Proceed to Checkout
                           </Button>
-                        </Link>
+                        </SheetTrigger>
+
                       </div>
                     </>
                   )}
@@ -204,6 +259,26 @@ export function Navbar() {
             </Sheet>
           </div>
         </div>
+        <Sheet open={showCustomerForm} onOpenChange={setShowCustomerForm}>
+
+          <SheetContent className="bg-card p-6 w-full sm:max-w-md">
+            <SheetTitle className="font-serif text-xl mb-4">Customer Information</SheetTitle>
+            <form onSubmit={handleCustomerSubmit} className="space-y-3">
+              <input type="text" placeholder="Full Name" value={fullName} onChange={e => setFullName(e.target.value)} required className="w-full p-3 border rounded" />
+              <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required className="w-full p-3 border rounded" />
+              <input type="tel" placeholder="Phone" value={phone} onChange={e => setPhone(e.target.value)} required className="w-full p-3 border rounded" />
+              <input type="text" placeholder="Address" value={address} onChange={e => setAddress(e.target.value)} required className="w-full p-3 border rounded" />
+              <input type="text" placeholder="City" value={city} onChange={e => setCity(e.target.value)} required className="w-full p-3 border rounded" />
+              <input type="text" placeholder="State" value={state} onChange={e => setState(e.target.value)} required className="w-full p-3 border rounded" />
+              <input type="text" placeholder="ZIP / Postal Code" value={zip} onChange={e => setZip(e.target.value)} required className="w-full p-3 border rounded" />
+              <input type="text" placeholder="Country" value={country} onChange={e => setCountry(e.target.value)} required className="w-full p-3 border rounded" />
+              <Button type="submit" className="w-full bg-primary text-primary-foreground py-4" disabled={isSubmitting}>
+                {isSubmitting ? "Processing..." : "Complete Order"}
+              </Button>
+            </form>
+          </SheetContent>
+        </Sheet>
+
       </div>
     </nav>
   )

@@ -1,9 +1,10 @@
 "use client"
 
 import { createContext, useContext, useState, type ReactNode } from "react"
+import axiosInterceptor from "@/lib/axiosInterceptor"
 
 export interface CartItem {
-  plantId: number
+  plantId: string
   plantName: string
   plantImage: string
   startDate: string
@@ -11,39 +12,26 @@ export interface CartItem {
   rentalDays: number
   pricePerDay: number
   totalPrice: number
-  size: {
+  size?: {
     id: string
     name: string
     height: string
-  }
-  pot: {
-    id: number
+  } | null
+  pot?: {
+    id: string
     name: string
     color: string
-  }
+  } | null
 }
 
 interface CartContextType {
   cartItems: CartItem[]
-  addToCart: (item: CartItem) => void
-  removeFromCart: (plantId: number) => void
+  addToCart: (item: CartItem) => Promise<void>
+  removeFromCart: (plantId: string) => Promise<void>
   getCartCount: () => number
   clearCart: () => void
-  getBookedDatesForPlant: (plantId: number) => { start: Date; end: Date }[]
+  getBookedDatesForPlant: (plantId: string) => { start: Date; end: Date }[]
   getCartTotal: () => number
-}
-
-const existingBookings: Record<number, { start: Date; end: Date }[]> = {
-  1: [
-    { start: new Date(2025, 11, 5), end: new Date(2025, 11, 10) },
-    { start: new Date(2025, 11, 20), end: new Date(2025, 11, 25) },
-  ],
-  2: [{ start: new Date(2025, 11, 8), end: new Date(2025, 11, 15) }],
-  3: [
-    { start: new Date(2025, 11, 1), end: new Date(2025, 11, 5) },
-    { start: new Date(2025, 11, 18), end: new Date(2025, 11, 22) },
-  ],
-  4: [{ start: new Date(2025, 11, 10), end: new Date(2025, 11, 14) }],
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
@@ -51,42 +39,74 @@ const CartContext = createContext<CartContextType | undefined>(undefined)
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
 
-  const addToCart = (item: CartItem) => {
-    setCartItems((prev) => {
-      const existingIndex = prev.findIndex((i) => i.plantId === item.plantId)
-      if (existingIndex > -1) {
-        const updated = [...prev]
-        updated[existingIndex] = item
-        return updated
-      }
-      return [...prev, item]
+  // Add to cart with API validation
+ 
+
+const addToCart = async (item: CartItem) => {
+  // 1️⃣ Call API to validate/add cart
+  try {
+    await axiosInterceptor.post("/cart/validate", {
+      plantId: item.plantId,
+      startDate: item.startDate,
+      endDate: item.endDate,
     })
+    // You could also call /api/cart/add if you have that
+  } catch (err) {
+    console.error("Failed to validate cart with API:", err)
+    alert("Failed to add to cart. Please try again.")
+    return
   }
 
-  const removeFromCart = (plantId: number) => {
-    setCartItems((prev) => prev.filter((item) => item.plantId !== plantId))
+  // 2️⃣ Then update local state
+  setCartItems((prev) => {
+    const existingIndex = prev.findIndex((i) => i.plantId === item.plantId)
+    if (existingIndex > -1) {
+      const updated = [...prev]
+      updated[existingIndex] = item
+      return updated
+    }
+    return [...prev, item]
+  })
+}
+
+
+  const removeFromCart = async (plantId: string) => {
+    try {
+      await axiosInterceptor.post("/api/cart/remove", { plantId })
+      setCartItems((prev) => prev.filter((item) => item.plantId !== plantId))
+    } catch (err) {
+      console.error("Failed to remove from cart:", err)
+    }
   }
 
   const getCartCount = () => cartItems.length
-
   const clearCart = () => setCartItems([])
-
   const getCartTotal = () => cartItems.reduce((acc, item) => acc + item.totalPrice, 0)
 
-  const getBookedDatesForPlant = (plantId: number) => {
-    const existing = existingBookings[plantId] || []
+  // For booked date ranges, combine local cart and existing bookings (optional)
+  const existingBookings: Record<string, { start: Date; end: Date }[]> = {}
+  const getBookedDatesForPlant = (plantId: string) => {
     const fromCart = cartItems
       .filter((item) => item.plantId === plantId)
       .map((item) => ({
         start: new Date(item.startDate),
         end: new Date(item.endDate),
       }))
-    return [...existing, ...fromCart]
+    const fromExisting = existingBookings[plantId] || []
+    return [...fromExisting, ...fromCart]
   }
 
   return (
     <CartContext.Provider
-      value={{ cartItems, addToCart, removeFromCart, getCartCount, clearCart, getBookedDatesForPlant, getCartTotal }}
+      value={{
+        cartItems,
+        addToCart,
+        removeFromCart,
+        getCartCount,
+        clearCart,
+        getBookedDatesForPlant,
+        getCartTotal,
+      }}
     >
       {children}
     </CartContext.Provider>
@@ -95,8 +115,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
 export function useCart() {
   const context = useContext(CartContext)
-  if (context === undefined) {
-    throw new Error("useCart must be used within a CartProvider")
-  }
+  if (!context) throw new Error("useCart must be used within a CartProvider")
   return context
 }

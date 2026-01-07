@@ -1,13 +1,12 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import Link from "next/link"
-import { Navbar } from "@/components/navbar"
-import { CartProvider, useCart } from "@/context/cart-context"
 import { Button } from "@/components/ui/button"
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import { ArrowLeft, Truck, Check, AlertCircle } from "lucide-react"
+import { CartProvider, useCart } from "@/context/cart-context"
+import { Navbar } from "@/components/navbar"
 
 const serviceCounties = [
   "Greater London",
@@ -20,13 +19,24 @@ const serviceCounties = [
   "Oxfordshire",
 ]
 
-function CheckoutContent() {
+ function CheckoutContent() {
   const { cartItems, getCartTotal, clearCart } = useCart()
-  const [agreedToTerms, setAgreedToTerms] = useState(false)
-  const [confirmedCounty, setConfirmedCounty] = useState(false)
   const [selectedCounty, setSelectedCounty] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
+  const [showCustomerForm, setShowCustomerForm] = useState(false)
+
+  // Customer info state
+  const [fullName, setFullName] = useState("")
+  const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
+  const [address, setAddress] = useState("")
+  const [city, setCity] = useState("")
+  const [state, setState] = useState("")
+  const [zip, setZip] = useState("")
+  const [country, setCountry] = useState("Pakistan")
+
+  const canCheckout = cartItems.length > 0 && selectedCounty
 
   const formatDateRange = (startDate: string, endDate: string) => {
     const start = new Date(startDate)
@@ -35,18 +45,50 @@ function CheckoutContent() {
     return `${start.toLocaleDateString("en-US", options)} - ${end.toLocaleDateString("en-US", options)}`
   }
 
-  const canCheckout = cartItems.length > 0 && agreedToTerms && confirmedCounty && selectedCounty
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleCustomerSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!canCheckout) return
+    if (!fullName || !email || !phone || !address || !city || !state || !zip || !country) return
 
     setIsSubmitting(true)
-    setTimeout(() => {
-      setIsSubmitting(false)
-      setIsComplete(true)
+
+    const payload = {
+      customerInfo: {
+        fullName,
+        email,
+        phone,
+        address: {
+          fullAddress: address,
+          city,
+          state,
+          zip,
+          country,
+        },
+      },
+      items: cartItems.map((item) => ({
+        plantId: item.plantId,
+        startDate: item.startDate,
+        endDate: item.endDate,
+      })),
+    }
+
+    try {
+      const res = await fetch("/api/checkout/create-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+
+      if (!res.ok) throw new Error("Checkout failed")
+
       clearCart()
-    }, 2000)
+      setShowCustomerForm(false)
+      setIsComplete(true)
+    } catch (err) {
+      console.error(err)
+      alert("Checkout failed, please try again")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   if (isComplete) {
@@ -56,18 +98,15 @@ function CheckoutContent() {
           <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
             <Check className="h-10 w-10 text-primary" />
           </div>
-          <h2 className="font-serif text-3xl font-bold text-foreground mb-4">Order Confirmed!</h2>
+          <h2 className="font-serif text-3xl font-bold mb-4">Order Confirmed!</h2>
           <p className="text-muted-foreground mb-4">
             Thank you for your order. We will deliver and install your plants within 2 weeks.
           </p>
-          <div className="bg-muted p-4 rounded-lg mb-6">
-            <div className="flex items-center gap-3 text-primary">
-              <Truck className="h-5 w-5" />
-              <span className="font-medium">Installation within 2 weeks</span>
-            </div>
+          <div className="bg-muted p-4 rounded-lg mb-6 flex items-center gap-3 text-primary">
+            <Truck className="h-5 w-5" /> Delivery & Installation included
           </div>
           <Link href="/">
-            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">Continue Shopping</Button>
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">Continue Shopping</Button>
           </Link>
         </div>
       </div>
@@ -78,10 +117,10 @@ function CheckoutContent() {
     return (
       <div className="min-h-[60vh] flex items-center justify-center px-4">
         <div className="text-center">
-          <h2 className="font-serif text-2xl font-bold text-foreground mb-4">Your cart is empty</h2>
+          <h2 className="font-serif text-2xl font-bold mb-4">Your cart is empty</h2>
           <p className="text-muted-foreground mb-6">Add some plants to your cart to continue.</p>
           <Link href="/">
-            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">Browse Plants</Button>
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">Browse Plants</Button>
           </Link>
         </div>
       </div>
@@ -92,17 +131,16 @@ function CheckoutContent() {
     <section className="py-8 md:py-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
         <Link href="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary mb-8">
-          <ArrowLeft className="h-4 w-4" />
-          Continue Shopping
+          <ArrowLeft className="h-4 w-4" /> Continue Shopping
         </Link>
 
-        <h1 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-8">Checkout</h1>
+        <h1 className="font-serif text-3xl md:text-4xl font-bold mb-8">Checkout</h1>
 
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Order Summary */}
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-card rounded-xl p-6 shadow-sm">
-              <h2 className="font-serif text-xl font-semibold text-card-foreground mb-4">Order Summary</h2>
+              <h2 className="font-serif text-xl font-semibold mb-4">Order Summary</h2>
               <div className="space-y-4">
                 {cartItems.map((item) => (
                   <div key={item.plantId} className="flex gap-4 p-4 bg-muted rounded-lg">
@@ -112,11 +150,11 @@ function CheckoutContent() {
                       className="w-20 h-20 object-cover rounded-lg"
                     />
                     <div className="flex-1">
-                      <h3 className="font-medium text-card-foreground">{item.plantName}</h3>
+                      <h3 className="font-medium">{item.plantName}</h3>
                       <p className="text-sm text-muted-foreground">
-                        Size: {item.size.name} ({item.size.height})
+                        Size: {item.size?.name} ({item.size?.height})
                       </p>
-                      <p className="text-sm text-muted-foreground">Pot: {item.pot.name} (Free)</p>
+                      <p className="text-sm text-muted-foreground">Pot: {item.pot?.name} (Free)</p>
                       <p className="text-sm text-muted-foreground">
                         {formatDateRange(item.startDate, item.endDate)} ({item.rentalDays} days)
                       </p>
@@ -132,7 +170,7 @@ function CheckoutContent() {
             <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 flex items-start gap-3">
               <Truck className="h-5 w-5 text-primary mt-0.5 shrink-0" />
               <div>
-                <p className="font-medium text-foreground">Delivery & Installation</p>
+                <p className="font-medium">Delivery & Installation</p>
                 <p className="text-sm text-muted-foreground">
                   Your plants will be delivered and professionally installed within 2 weeks of your order confirmation.
                 </p>
@@ -140,102 +178,95 @@ function CheckoutContent() {
             </div>
           </div>
 
-          {/* Payment & Confirmation */}
+          {/* Checkout / Modal Trigger */}
           <div className="lg:col-span-1">
-            <form onSubmit={handleSubmit} className="bg-card rounded-xl p-6 shadow-sm sticky top-24">
-              <h2 className="font-serif text-xl font-semibold text-card-foreground mb-6">Confirm Order</h2>
-
-              <div className="mb-6">
-                <label htmlFor="county" className="block text-sm font-medium text-card-foreground mb-2">
-                  Select Your County
-                </label>
-                <select
-                  id="county"
-                  value={selectedCounty}
-                  onChange={(e) => setSelectedCounty(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            <Sheet open={showCustomerForm} onOpenChange={setShowCustomerForm}>
+              <SheetTrigger asChild>
+                <Button
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 text-lg font-semibold"
+                  disabled={!canCheckout}
                 >
-                  <option value="">Choose a county...</option>
-                  {serviceCounties.map((county) => (
-                    <option key={county} value={county}>
-                      {county}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-4 mb-6">
-                <label className="flex items-start gap-3 cursor-pointer">
+                  Proceed to Checkout
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="bg-card p-6 w-full sm:max-w-md">
+                <SheetTitle className="font-serif text-xl mb-4">Customer Information</SheetTitle>
+                <form className="space-y-3" onSubmit={handleCustomerSubmit}>
                   <input
-                    type="checkbox"
-                    checked={confirmedCounty}
-                    onChange={(e) => setConfirmedCounty(e.target.checked)}
-                    className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                    type="text"
+                    placeholder="Full Name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full p-3 rounded-lg border border-border bg-background"
+                    required
                   />
-                  <span className="text-sm text-muted-foreground">
-                    I confirm that my delivery location is within the service area (
-                    {selectedCounty || "selected county"})
-                  </span>
-                </label>
-
-                <label className="flex items-start gap-3 cursor-pointer">
                   <input
-                    type="checkbox"
-                    checked={agreedToTerms}
-                    onChange={(e) => setAgreedToTerms(e.target.checked)}
-                    className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full p-3 rounded-lg border border-border bg-background"
+                    required
                   />
-                  <span className="text-sm text-muted-foreground">
-                    I agree to the{" "}
-                    <a href="#" className="text-primary hover:underline">
-                      Terms & Conditions
-                    </a>{" "}
-                    and{" "}
-                    <a href="#" className="text-primary hover:underline">
-                      Privacy Policy
-                    </a>
-                  </span>
-                </label>
-              </div>
+                  <input
+                    type="tel"
+                    placeholder="Phone"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full p-3 rounded-lg border border-border bg-background"
+                    required
+                  />
+                  <input
+                    type="text"
+                    placeholder="Address"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    className="w-full p-3 rounded-lg border border-border bg-background"
+                    required
+                  />
+                  <input
+                    type="text"
+                    placeholder="City"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="w-full p-3 rounded-lg border border-border bg-background"
+                    required
+                  />
+                  <input
+                    type="text"
+                    placeholder="State"
+                    value={state}
+                    onChange={(e) => setState(e.target.value)}
+                    className="w-full p-3 rounded-lg border border-border bg-background"
+                    required
+                  />
+                  <input
+                    type="text"
+                    placeholder="ZIP / Postal Code"
+                    value={zip}
+                    onChange={(e) => setZip(e.target.value)}
+                    className="w-full p-3 rounded-lg border border-border bg-background"
+                    required
+                  />
+                  <input
+                    type="text"
+                    placeholder="Country"
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    className="w-full p-3 rounded-lg border border-border bg-background"
+                    required
+                  />
 
-              {/* Warnings */}
-              {(!agreedToTerms || !confirmedCounty || !selectedCounty) && (
-                <div className="bg-muted p-3 rounded-lg mb-6 flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                  <p className="text-xs text-muted-foreground">
-                    Please select your county and agree to the terms to proceed with checkout.
-                  </p>
-                </div>
-              )}
-
-              {/* Price Summary */}
-              <div className="border-t border-border pt-4 mb-6">
-                <div className="flex justify-between text-sm text-muted-foreground mb-2">
-                  <span>Subtotal</span>
-                  <span>${getCartTotal()}</span>
-                </div>
-                <div className="flex justify-between text-sm text-muted-foreground mb-2">
-                  <span>Delivery & Installation</span>
-                  <span className="text-primary">FREE</span>
-                </div>
-                <div className="flex justify-between text-sm text-muted-foreground mb-4">
-                  <span>Pots</span>
-                  <span className="text-primary">FREE</span>
-                </div>
-                <div className="flex justify-between font-semibold text-lg text-card-foreground">
-                  <span>Total</span>
-                  <span>${getCartTotal()}</span>
-                </div>
-              </div>
-
-              <Button
-                type="submit"
-                disabled={!canCheckout || isSubmitting}
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 text-lg font-semibold disabled:opacity-50"
-              >
-                {isSubmitting ? "Processing..." : "Complete Order"}
-              </Button>
-            </form>
+                  <Button
+                    type="submit"
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-4 mt-2"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Processing..." : "Complete Order"}
+                  </Button>
+                </form>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </div>
