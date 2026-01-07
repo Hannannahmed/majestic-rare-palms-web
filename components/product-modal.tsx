@@ -7,6 +7,7 @@ import { useCart } from "@/context/cart-context"
 import { Button } from "@/components/ui/button"
 import { DateRangePicker } from "@/components/date-range-picker"
 import axiosInterceptor from "@/lib/axiosInterceptor"
+import { ErrorToast } from "./global/ToastContainer"
 
 const MIN_RENTAL_DAYS = 3
 const DISCOUNT_SLABS = [
@@ -133,7 +134,7 @@ export function ProductModal({ plant, isOpen, onClose }: ProductModalProps) {
   const handleAddToCart = () => {
   if (!canAddToCart) return
   if (!isDateRangeAvailable()) {
-    alert("Selected dates are not available")
+    ErrorToast("Selected dates are not available")
     return
   }
 
