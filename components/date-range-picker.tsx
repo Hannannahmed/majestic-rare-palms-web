@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from "react"
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react"
+import { ErrorToast } from "./global/ToastContainer";
+import { Button } from "./ui/button";
 
 interface DateRangePickerProps {
   bookedDates: { start: Date; end: Date }[]
@@ -88,24 +90,41 @@ export function DateRangePicker({ bookedDates, onDateRangeChange, startDate, end
     }
     return false
   }
+  // const canAddToCart = startDate && endDate && rentalDays >= 30
 
   const handleDateClick = (date: Date) => {
     if (isDateDisabled(date)) return
 
+    // Agar start date select nahi hui ya dono dates selected hai, start date set karo
     if (!startDate || (startDate && endDate) || date < startDate) {
       onDateRangeChange(date, null)
       setSelectingEnd(true)
-    } else if (selectingEnd && date > startDate) {
-      if (hasBookedDateInRange(startDate, date)) {
-        onDateRangeChange(date, null)
-        setSelectingEnd(true)
-      } else {
-        onDateRangeChange(startDate, date)
-        setSelectingEnd(false)
-        setIsCalendarOpen(false)
+      return
+    }
+
+    // End date select karte waqt
+    if (selectingEnd) {
+      const minEndDate = new Date(startDate)
+      minEndDate.setDate(minEndDate.getDate() + 30) // 30 days minimum
+      if (date < minEndDate) {
+        ErrorToast(`Minimum rental term is 1 month`)
+        return
       }
+
+      // Agar booked date overlap hai, reset end date
+      if (hasBookedDateInRange(startDate, date)) {
+        ErrorToast("Selected range overlaps with booked dates")
+        onDateRangeChange(date, null)
+        return
+      }
+
+      // End date valid hai
+      onDateRangeChange(startDate, date)
+      setSelectingEnd(false)
     }
   }
+
+
 
   const prevMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))
@@ -176,6 +195,40 @@ export function DateRangePicker({ bookedDates, onDateRangeChange, startDate, end
 
   return (
     <div ref={containerRef} className="relative">
+      <div className="flex gap-2 mb-2">
+        {[3, 6, 12, 24].map(months => (
+          <Button
+            key={months}
+            size="sm"
+            onClick={() => {
+              if (!startDate) return
+              const end = new Date(startDate)
+              end.setMonth(end.getMonth() + months)
+
+              const diff = Math.ceil((end.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+              if (diff < 30) {
+                ErrorToast("Minimum rental term is 1 month")
+                return
+              }
+
+              // Booked date check
+              if (hasBookedDateInRange(startDate, end)) {
+                ErrorToast("Selected range overlaps with booked dates")
+                return
+              }
+
+              onDateRangeChange(startDate, end)
+            }}
+          >
+            {months} months
+          </Button>
+        ))}
+      </div>
+      <div className="mb-2 text-xs text-muted-foreground">
+        Price per plant decreases with longer rental terms and more plants.
+      </div>
+
+
       <div
         onClick={() => setIsCalendarOpen(!isCalendarOpen)}
         className="flex items-center justify-between w-full border border-border rounded-xl px-4 py-3 bg-card cursor-pointer hover:border-primary/50 transition-colors"

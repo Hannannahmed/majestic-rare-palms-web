@@ -105,7 +105,7 @@ export function ProductCards({ onPlantClick, category }: ProductCardsProps) {
                     {plant.shortDescription}
                   </p>
                   <p className="text-primary font-semibold">
-                    From ${plant.pricePerDay}/day
+                    From £{plant.pricePerDay}/day
                   </p>
                 </CardContent>
               </Card>

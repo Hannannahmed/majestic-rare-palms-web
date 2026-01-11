@@ -17,7 +17,7 @@ const navLinks = [
 ]
 
 export function Navbar() {
-  const { getCartCount, cartItems, removeFromCart, getCartTotal,clearCart } = useCart()
+  const { getCartCount, cartItems, removeFromCart, getCartTotal, clearCart } = useCart()
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const cartCount = getCartCount()
@@ -31,7 +31,18 @@ export function Navbar() {
   const [zip, setZip] = useState("")
   const [country, setCountry] = useState("Pakistan")
   const [isSubmitting, setIsSubmitting] = useState(false)
-
+const allowedCounties = [
+  "Kent",
+  "Essex",
+  "Surrey",
+  "London",
+  "Greater London",
+  "Oxfordshire",
+  "Berkshire",
+  "Hertfordshire",
+  "Bedfordshire",
+  "Cambridgeshire"
+];
   const formatDateRange = (startDate: string, endDate: string) => {
     const start = new Date(startDate)
     const end = new Date(endDate)
@@ -39,42 +50,75 @@ export function Navbar() {
     return `${start.toLocaleDateString("en-US", options)} - ${end.toLocaleDateString("en-US", options)}`
   }
   const handleCustomerSubmit = async (e: React.FormEvent) => {
-  e.preventDefault()
-  if (!fullName || !email || !phone || !address || !city || !state || !zip || !country) return
+    e.preventDefault();
 
-  setIsSubmitting(true)
-
-  const payload = {
-    customerInfo: {
-      fullName,
-      email,
-      phone,
-      address: { fullAddress: address, city, state, zip, country },
-    },
-    items: cartItems.map(item => ({
-      plantId: item.plantId,
-      startDate: item.startDate,
-      endDate: item.endDate,
-    })),
+  if (!allowedCounties.includes(state)) {
+ErrorToast(`We only operate in the following areas: ${allowedCounties.join(", ")}`);
+    return;
   }
+    e.preventDefault()
+    if (!fullName || !email || !phone || !address || !city || !state || !zip || !country) return
 
-  try {
-    const res = await axiosInterceptor.post("/checkout/create-session", payload)
+    setIsSubmitting(true)
 
-    // Axios throws for non-2xx status, so res.ok is not needed
-    SuccessToast("Order successfully placed!")
+    const payload = {
+      customerInfo: {
+        fullName,
+        email,
+        phone,
+        address: { fullAddress: address, city, state, zip, country },
+      },
+      items: cartItems.map(item => ({
+        plantId: item.plantId,
+        startDate: item.startDate,
+        endDate: item.endDate,
+      })),
+    }
 
-    
-    clearCart()
-    setShowCustomerForm(false)
-  } catch (err: any) {
-    console.error(err)
-    // Axios errors have response status/message
-    ErrorToast(err?.response?.data?.message || "Checkout failed, please try again")
-  } finally {
-    setIsSubmitting(false)
+    try {
+      const res = await axiosInterceptor.post("/checkout/create-session", payload)
+
+      // Axios throws for non-2xx status, so res.ok is not needed
+      SuccessToast("Order successfully placed!")
+
+
+      clearCart()
+      setShowCustomerForm(false)
+    } catch (err: any) {
+      console.error(err)
+      // Axios errors have response status/message
+      ErrorToast(err?.response?.data?.message || "Checkout failed, please try again")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
+const renderMenu = (items: typeof categories[0]["subcategories"], level = 0) => {
+  if (!items) return null
+
+  return (
+    <ul className={`${level === 0 ? "space-y-1" : "space-y-0 ml-4 border-l border-border pl-2"} `}>
+      {items.map((item) => (
+        <li key={item.id} className="group">
+          <Link
+            href={item.href}
+            className="flex items-center justify-between px-4 py-2 text-sm text-muted-foreground hover:text-primary hover:bg-muted rounded-md"
+          >
+            {item.name}
+            {item.subcategories && <ChevronDown className="h-4 w-4 ml-2" />}
+          </Link>
+
+          {/* Render children below the parent */}
+          {item.subcategories && (
+            <div className="hidden group-hover:block">
+              {renderMenu(item.subcategories, level + 1)}
+            </div>
+          )}
+        </li>
+      ))}
+    </ul>
+  )
 }
+
 
 
   return (
@@ -90,37 +134,28 @@ export function Navbar() {
           {/* Desktop Navigation with Mega Menu */}
           <div className="hidden lg:flex items-center gap-6">
             {/* Categories Dropdown */}
-            {categories.map((category) => (
-              <div
-                key={category.id}
-                className="relative"
-                onMouseEnter={() => setOpenDropdown(category.id)}
-                onMouseLeave={() => setOpenDropdown(null)}
+           
+            {/* All Plants Dropdown */}
+            <div
+              className="relative"
+              onMouseLeave={() => setOpenDropdown(null)}
+            >
+              <button
+                onMouseEnter={() => setOpenDropdown("all-plants")}
+                className="flex items-center gap-1 text-muted-foreground hover:text-primary font-medium py-4"
               >
-                <Link
-                  href={category.href}
-                  className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors font-medium py-4"
-                >
-                  {category.name}
-                  {category.subcategories && <ChevronDown className="h-4 w-4" />}
-                </Link>
+                All Plants
+                <ChevronDown className="h-4 w-4" />
+              </button>
 
-                {/* Dropdown Menu */}
-                {category.subcategories && openDropdown === category.id && (
-                  <div className="absolute top-full left-0 bg-card border border-border rounded-lg shadow-lg py-2 min-w-48 z-50">
-                    {category.subcategories.map((sub) => (
-                      <Link
-                        key={sub.id}
-                        href={sub.href}
-                        className="block px-4 py-2 text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
-                      >
-                        {sub.name}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
+              {openDropdown === "all-plants" && (
+                <div className="absolute top-full left-0 bg-card border border-border rounded-lg shadow-lg p-3 min-w-56 z-50">
+                  {renderMenu(categories[0].subcategories)}
+                </div>
+              )}
+            </div>
+          
+
 
             {/* Regular Nav Links */}
             {navLinks.map((link) => (
@@ -173,7 +208,7 @@ export function Navbar() {
                               <p className="text-sm text-muted-foreground">
                                 {formatDateRange(item.startDate, item.endDate)} ({item.rentalDays} days)
                               </p>
-                              <p className="text-sm font-semibold text-primary">${item.totalPrice}</p>
+                              <p className="text-sm font-semibold text-primary">£ {item.totalPrice}</p>
                             </div>
                             <button
                               onClick={() => removeFromCart(item.plantId)}
@@ -195,7 +230,7 @@ export function Navbar() {
                           <Button
                             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                             disabled={cartCount === 0}
-                            onClick={()=>setShowCustomerForm(true)}
+                            onClick={() => setShowCustomerForm(true)}
                           >
                             Proceed to Checkout
                           </Button>

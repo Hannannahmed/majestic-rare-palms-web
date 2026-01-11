@@ -39,11 +39,12 @@ export interface Plant {
 
 
 
+// lib/data.ts
 export interface Category {
   id: string
   name: string
   href: string
-  subcategories?: { id: string; name: string; href: string }[]
+  subcategories?: Category[]
 }
 
 export const categories: Category[] = [
@@ -52,17 +53,29 @@ export const categories: Category[] = [
     name: "All Plants",
     href: "/#products",
     subcategories: [
-      { id: "indoor", name: "Indoor", href: "/?filter=indoor#products" },
-      { id: "individual", name: "Individual", href: "/?filter=individual#products" },
-      { id: "palms", name: "Palms", href: "/?filter=palms#products" },
-      { id: "bananas", name: "Bananas", href: "/?filter=bananas#products" },
-      { id: "bundles", name: "Bundles", href: "/?filter=bundles#products" },
+      {
+        id: "indoor",
+        name: "Indoor",
+        href: "/?filter=indoor#products",
+        subcategories: [
+          {
+            id: "individual",
+            name: "Individual",
+            href: "/?filter=individual#products",
+            subcategories: [
+              { id: "palms", name: "Palms", href: "/?filter=palms#products" },
+              { id: "broad-leaves", name: "Broad-leaves", href: "/?filter=broad-leaves#products" },
+            ],
+          },
+          { id: "bundles", name: "Bundles", href: "/?filter=bundles#products" },
+        ],
+      },
       { id: "outdoor", name: "Outdoor", href: "/?filter=outdoor#products" },
-      { id: "pots", name: "Pots", href: "/#pots" },
     ],
   },
- 
 ]
+
+
 
 export const plantSizes: PlantSize[] = [
   { id: "small", name: "Small", height: "30-50cm", priceMultiplier: 1 },

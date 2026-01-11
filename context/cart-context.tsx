@@ -12,6 +12,8 @@ export interface CartItem {
   rentalDays: number
   pricePerDay: number
   totalPrice: number
+  numPlants: number
+
   size?: {
     id: string
     name: string

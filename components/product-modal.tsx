@@ -9,7 +9,10 @@ import { DateRangePicker } from "@/components/date-range-picker"
 import axiosInterceptor from "@/lib/axiosInterceptor"
 import { ErrorToast } from "./global/ToastContainer"
 
-const MIN_RENTAL_DAYS = 3
+const MIN_RENTAL_DAYS = 30
+const BASE_PRICE_PER_DAY = 5; // £5 driver input
+const adjustedPricePerDay = BASE_PRICE_PER_DAY;
+
 const DISCOUNT_SLABS = [
   { days: 90, discount: 20 },
   { days: 60, discount: 15 },
@@ -34,6 +37,8 @@ export function ProductModal({ plant, isOpen, onClose }: ProductModalProps) {
   const [startDate, setStartDate] = useState<Date | null>(null)
   const [endDate, setEndDate] = useState<Date | null>(null)
   const [isAdded, setIsAdded] = useState(false)
+  const [numPlants, setNumPlants] = useState(3); // Default minimum 3 plants
+
 
   const { addToCart } = useCart()
 
@@ -58,6 +63,19 @@ export function ProductModal({ plant, isOpen, onClose }: ProductModalProps) {
     document.addEventListener("keydown", handleEsc)
     return () => document.removeEventListener("keydown", handleEsc)
   }, [onClose])
+const volumeMultiplier = useMemo(() => {
+  if (numPlants <= 3) return 1;
+
+  const extraPlants = numPlants - 3;
+  const groups = Math.ceil(extraPlants / 5);
+
+  let multiplier = 1;
+  for (let i = 0; i < groups; i++) {
+    multiplier *= 0.85; // successive 15% discount
+  }
+  return multiplier;
+}, [numPlants]);
+
 
   useEffect(() => {
     if (!isOpen || !plant) return
@@ -121,10 +139,24 @@ export function ProductModal({ plant, isOpen, onClose }: ProductModalProps) {
     )
   }
 
-  const adjustedPricePerDay = plantDetails.pricePerDay
-  const basePrice = adjustedPricePerDay * rentalDays
-  const totalPrice = Math.round(basePrice * (1 - discount / 100))
-  const canAddToCart = startDate && endDate && rentalDays >= MIN_RENTAL_DAYS
+  const adjustedPricePerDay = plantDetails.pricePerDay; // base per day price
+
+const basePrice = adjustedPricePerDay * rentalDays * numPlants;
+
+const termDiscountedPrice =
+  basePrice * (1 - discount / 100);
+
+const finalPrice = Math.round(
+  termDiscountedPrice * volumeMultiplier
+);
+const volumeDiscountAmount = Math.round(
+  termDiscountedPrice - finalPrice
+);
+
+const canAddToCart = startDate && endDate && rentalDays >= MIN_RENTAL_DAYS;
+
+const months = Math.ceil(rentalDays / 30); // approximate months
+const monthlyPayment = Math.round(finalPrice / months);
 
   const isDateRangeAvailable = () => {
     if (!startDate || !endDate) return false
@@ -132,7 +164,7 @@ export function ProductModal({ plant, isOpen, onClose }: ProductModalProps) {
   }
 
   const handleAddToCart = () => {
-  if (!canAddToCart) return
+  if (!canAddToCart) return; // ye line kaam karegi ab
   if (!isDateRangeAvailable()) {
     ErrorToast("Selected dates are not available")
     return
@@ -146,10 +178,11 @@ export function ProductModal({ plant, isOpen, onClose }: ProductModalProps) {
     endDate: endDate!.toISOString(),
     rentalDays,
     pricePerDay: adjustedPricePerDay,
-    totalPrice,
+    totalPrice: finalPrice,
+    numPlants,  
     size: null,
     pot: null,
-  })
+  });
 
   setIsAdded(true)
   setTimeout(onClose, 1000)
@@ -189,8 +222,19 @@ export function ProductModal({ plant, isOpen, onClose }: ProductModalProps) {
                 </ul>
               </div>
             )}
+<div className="mb-4">
+  <label className="font-medium mb-1">Number of Plants (min 3)</label>
+  <input
+    type="number"
+    min={3}
+    value={numPlants}
+    onChange={e => setNumPlants(Math.max(3, Number(e.target.value)))}
+    className="w-full p-2 border rounded"
+  />
+</div>
 
             {/* Date Picker */}
+            
             <div className="mb-6">
               <label className="flex items-center gap-2 mb-2 font-medium">
                 <Calendar className="h-4 w-4" /> Rental Period
@@ -217,22 +261,42 @@ export function ProductModal({ plant, isOpen, onClose }: ProductModalProps) {
 
         {/* Price & Add to Cart */}
         <div className="p-6 border-t border-border bg-background sticky bottom-0">
-          <div className="flex justify-between mb-2 text-sm">
-            <span>${adjustedPricePerDay} × {rentalDays} days</span>
-            <span>${basePrice}</span>
-          </div>
-          {discount > 0 && (
-            <div className="flex justify-between text-sm text-primary mb-2">
-              <span>Discount</span>
-              <span>- ${basePrice - totalPrice}</span>
-            </div>
-          )}
-          <div className="flex justify-between font-semibold text-lg mb-4">
-            <span>Total</span>
-            <span>${totalPrice}</span>
-          </div>
+         <div className="flex justify-between mb-2 text-sm">
+  <span>£{adjustedPricePerDay} × {rentalDays} days × {numPlants} plants</span>
+  <span>£{basePrice}</span>
+</div>
+
+{discount > 0 && (
+  <div className="flex justify-between text-sm text-primary mb-2">
+    <span>Rental Term Discount</span>
+<span>- £{Math.round(basePrice - termDiscountedPrice)}</span>
+  </div>
+)}
+
+{volumeDiscountAmount > 0 && (
+  <div className="flex justify-between text-sm text-primary mb-2">
+    <span>Volume Discount</span>
+    <span>- £{volumeDiscountAmount}</span>
+  </div>
+)}
+
+
+<div className="flex justify-between font-semibold text-lg mb-1">
+  <span>Total</span>
+  <span>£{finalPrice}</span>
+</div>
+
+{/* Monthly payment info */}
+{months >= 1 && (
+<p className="text-sm text-muted-foreground mt-2 mb-2">
+  Or £{monthlyPayment} per month payable for {months} months under our pay monthly option
+</p>
+
+)}
+
 
           <Button onClick={handleAddToCart} disabled={!canAddToCart || isAdded} className="w-full py-4 text-lg">
+
             {isAdded ? (
               <>
                 <Check className="mr-2 h-5 w-5" /> Added to Cart

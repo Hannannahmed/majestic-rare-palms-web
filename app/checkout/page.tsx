@@ -160,7 +160,7 @@ const serviceCounties = [
                       </p>
                     </div>
                     <div className="text-right">
-                      <span className="font-semibold text-primary">${item.totalPrice}</span>
+                      <span className="font-semibold text-primary">£ {item.totalPrice}</span>
                     </div>
                   </div>
                 ))}
