@@ -163,7 +163,11 @@ const monthlyPayment = Math.round(finalPrice / months);
     return !bookedDates.some((range) => startDate <= range.end && endDate >= range.start)
   }
 
-  const handleAddToCart = () => {
+  const handleAddToCart = () => { 
+    if (numPlants < 3) {
+    ErrorToast("Minimum 3 plants are required")
+    return
+  }
   if (!canAddToCart) return; // ye line kaam karegi ab
   if (!isDateRangeAvailable()) {
     ErrorToast("Selected dates are not available")
@@ -226,9 +230,19 @@ const monthlyPayment = Math.round(finalPrice / months);
   <label className="font-medium mb-1">Number of Plants (min 3)</label>
   <input
     type="number"
+    
     min={3}
-    value={numPlants}
-    onChange={e => setNumPlants(Math.max(3, Number(e.target.value)))}
+  step={1}
+  value={numPlants === 0 ? "" : numPlants}
+onChange={(e) => {
+  const value = e.target.value
+  if (value === "") {
+    setNumPlants(0)
+  } else {
+    setNumPlants(Number(value))
+  }
+}}
+
     className="w-full p-2 border rounded"
   />
 </div>
