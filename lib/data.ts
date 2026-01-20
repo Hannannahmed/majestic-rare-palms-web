@@ -34,6 +34,8 @@ export interface Plant {
     potSize: string
     lightRequirement: string
     wateringFrequency: string
+      size?: "small" | "medium" | "large"
+
   }
 }
 

@@ -11,6 +11,9 @@ interface DateRangePickerProps {
   startDate: Date | null
   endDate: Date | null
 }
+const INSTALLATION_LEAD_DAYS = 14        // changeable later
+const MAX_BOOKING_MONTHS_AHEAD = 36      // business decision
+
 
 export function DateRangePicker({ bookedDates, onDateRangeChange, startDate, endDate }: DateRangePickerProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date())
@@ -54,8 +57,20 @@ export function DateRangePicker({ bookedDates, onDateRangeChange, startDate, end
   const isDateDisabled = (date: Date) => {
     const checkDate = new Date(date)
     checkDate.setHours(0, 0, 0, 0)
-    return checkDate < today || isDateBooked(date)
+
+    const minSelectableDate = new Date(today)
+    minSelectableDate.setDate(minSelectableDate.getDate() + INSTALLATION_LEAD_DAYS)
+
+    const maxSelectableDate = new Date(today)
+    maxSelectableDate.setMonth(maxSelectableDate.getMonth() + MAX_BOOKING_MONTHS_AHEAD)
+
+    return (
+      checkDate < minSelectableDate ||
+      checkDate > maxSelectableDate ||
+      isDateBooked(checkDate)
+    )
   }
+
 
   const isDateInRange = (date: Date) => {
     if (!startDate || !endDate) return false
@@ -95,35 +110,37 @@ export function DateRangePicker({ bookedDates, onDateRangeChange, startDate, end
   const handleDateClick = (date: Date) => {
     if (isDateDisabled(date)) return
 
-    // Agar start date select nahi hui ya dono dates selected hai, start date set karo
-    if (!startDate || (startDate && endDate) || date < startDate) {
+    // START DATE selection
+    if (!startDate || endDate || date < startDate) {
       onDateRangeChange(date, null)
       setSelectingEnd(true)
       return
     }
 
-    // End date select karte waqt
-    if (selectingEnd) {
-      const minEndDate = new Date(startDate)
-      minEndDate.setDate(minEndDate.getDate() + 30) // 30 days minimum
-      if (date < minEndDate) {
-        ErrorToast(`Minimum rental term is 1 month`)
-        return
-      }
+    // END DATE selection
+    const minEndDate = new Date(startDate)
+    minEndDate.setDate(minEndDate.getDate() + 30)
 
-      // Agar booked date overlap hai, reset end date
-      if (hasBookedDateInRange(startDate, date)) {
-        ErrorToast("Selected range overlaps with booked dates")
-        onDateRangeChange(date, null)
-        return
-      }
-
-      // End date valid hai
-      onDateRangeChange(startDate, date)
-      setSelectingEnd(false)
+    if (date < minEndDate) {
+      ErrorToast("Minimum rental term is 1 month")
+      return
     }
+
+    if (hasBookedDateInRange(startDate, date)) {
+      ErrorToast("Selected range overlaps with booked dates")
+      return
+    }
+
+    onDateRangeChange(startDate, date)
+    setSelectingEnd(false)
   }
 
+
+  const canGoNextMonth = () => {
+    const max = new Date(today)
+    max.setMonth(max.getMonth() + MAX_BOOKING_MONTHS_AHEAD)
+    return currentMonth < max
+  }
 
 
   const prevMonth = () => {
@@ -266,10 +283,12 @@ export function DateRangePicker({ bookedDates, onDateRangeChange, startDate, end
             </h3>
             <button
               onClick={nextMonth}
-              className="p-2 rounded-lg hover:bg-muted text-card-foreground transition-colors"
+              disabled={!canGoNextMonth()}
+              className="p-2 rounded-lg hover:bg-muted text-card-foreground transition-colors disabled:opacity-40"
             >
               <ChevronRight className="h-5 w-5" />
             </button>
+
           </div>
 
           <div className="grid grid-cols-7 gap-1 mb-2">

@@ -10,6 +10,7 @@ import { ErrorToast } from "./global/ToastContainer"
 import { useRouter } from "next/navigation"
 
 const MIN_RENTAL_DAYS = 30
+const INSTALLATION_LEAD_DAYS = 14 // client-controllable
 
 /* ================= CLIENT EXCEL INPUTS ================= */
 const ALLOWED_COUNTIES = [
@@ -90,6 +91,22 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
   const [installationDate, setInstallationDate] = useState<Date | null>(null)
   const [postcode, setPostcode] = useState("")
   const [isAdded, setIsAdded] = useState(false)
+
+  useEffect(() => {
+  if (!startDate) {
+    setInstallationDate(null)
+    return
+  }
+
+  const minInstallDate = new Date(startDate)
+  minInstallDate.setDate(minInstallDate.getDate() + INSTALLATION_LEAD_DAYS)
+
+  if (!installationDate || installationDate < minInstallDate) {
+    setInstallationDate(minInstallDate)
+  }
+}, [startDate])
+
+
   useEffect(() => {
     if (!isOpen || !plant) return;
 
@@ -175,15 +192,16 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
     }
   }, [size, rentalDays, rentalMonths, numPlants])
 
-  const isCountryValid = ALLOWED_COUNTIES.includes(country)
+const [county, setCounty] = useState("")
+const isCountyValid = ALLOWED_COUNTIES.includes(county)
 
   const canAddToCart =
-    rentalDays >= MIN_RENTAL_DAYS &&
-    numPlants >= 3 &&
-    startDate &&
-    endDate &&
-    installationDate &&
-    isCountryValid
+  rentalDays >= MIN_RENTAL_DAYS &&
+  numPlants >= 3 &&
+  startDate &&
+  endDate &&
+  isCountyValid
+
 
   const handleAddToCart = async () => {
     if (!canAddToCart) {
@@ -248,32 +266,43 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
 
         <h3 className="font-semibold mb-2">Plant Size</h3>
         <div className="grid grid-cols-3 gap-3 mb-4">
-          {(Object.keys(SIZE_META) as any).map(s => (
-            <button key={s} onClick={() => setSize(s)}
-              className={`border p-3 rounded ${size === s && "border-primary ring-2"}`}>
+          {(Object.keys(SIZE_META) as Array<keyof typeof SIZE_META>).map((s) => (
+            <button
+              key={String(s)}
+              onClick={() => setSize(s)}
+              className={`border p-3 rounded ${size === s ? "border-primary ring-2" : ""
+                }`}
+            >
               <p className="capitalize">{s}</p>
             </button>
           ))}
         </div>
-      <h3 className="font-semibold mb-2">Pot Type</h3>
-<div className="grid grid-cols-3 gap-3 mb-4">
-  {(Object.keys(POT_META) as any).map(p => (
-    <button
-      key={p}
-      onClick={() => setPot(p)}
-      className={`border rounded-lg p-2 flex flex-col items-center justify-center ${
-        pot === p ? "border-primary ring-2" : ""
-      }`}
-    >
-      <img
-        src={POT_META[p].image}
-        alt={POT_META[p].name}
-        className="w-20 h-20 object-cover mb-1 rounded"
-      />
-      <span className="text-sm text-center">{POT_META[p].name}</span>
-    </button>
-  ))}
-</div>
+
+
+        <h3 className="font-semibold mb-2">Pot Type</h3>
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          {(Object.entries(POT_META) as [
+            "basic" | "ceramic" | "premium",
+            (typeof POT_META)["basic"]
+          ][]).map(([p, meta]) => (
+            <button
+              key={p}
+              onClick={() => setPot(p)}
+              className={`border rounded-lg p-2 flex flex-col items-center justify-center ${pot === p ? "border-primary ring-2" : ""
+                }`}
+            >
+              <img
+                src={meta.image}
+                alt={meta.name}
+                className="w-20 h-20 object-cover mb-1 rounded"
+              />
+              <span className="text-sm text-center">{meta.name}</span>
+            </button>
+          ))}
+        </div>
+
+
+
 
 
 
@@ -295,23 +324,25 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
 
 
         <h3 className="font-semibold mt-4 mb-2 flex gap-2"><MapPin /> Installation</h3>
-        <input type="date"
-          className="border p-2 w-full mb-2"
-          onChange={e => {
-            const date = new Date(e.target.value)
-            if (startDate && date < startDate) {
-              ErrorToast("Installation date cannot be before rental start date")
-              setInstallationDate(null)
-            } else {
-              setInstallationDate(date)
-            }
-          }}
-        />
+        <input
+  type="date"
+  className="border p-2 w-full mb-2"
+  min={
+    startDate
+      ? new Date(
+          startDate.getTime() + INSTALLATION_LEAD_DAYS * 86400000
+        ).toISOString().split("T")[0]
+      : undefined
+  }
+  value={installationDate?.toISOString().split("T")[0] || ""}
+  onChange={e => setInstallationDate(new Date(e.target.value))}
+/>
+
 
         <select
           className="border p-2 w-full"
-          value={country}
-          onChange={e => setCountry(e.target.value)}
+          value={county}
+          onChange={e => setCounty(e.target.value)}
         >
           <option value="">Select County</option>
           {ALLOWED_COUNTIES.map(c => (
