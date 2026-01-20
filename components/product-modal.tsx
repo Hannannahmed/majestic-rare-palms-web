@@ -12,6 +12,13 @@ import { useRouter } from "next/navigation"
 const MIN_RENTAL_DAYS = 30
 
 /* ================= CLIENT EXCEL INPUTS ================= */
+const ALLOWED_COUNTIES = [
+  "Greater London",
+  "West Midlands",
+  "Merseyside",
+  "Greater Manchester",
+  "West Yorkshire",
+]
 
 const BASE_PRICE_PER_DAY = 5 // £5 (medium plant base)
 
@@ -21,7 +28,7 @@ const SIZE_META = {
   large: { id: "L", name: "Large", height: "150cm", adjust: 20 },
 }
 
-const POT_META = {
+const POT_META: any = {
   basic: { id: "basic", name: "Basic Pot", color: "Black" },
   ceramic: { id: "ceramic", name: "Ceramic Pot", color: "White" },
   premium: { id: "premium", name: "Premium Pot", color: "Stone Grey" },
@@ -82,33 +89,33 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
   const [installationDate, setInstallationDate] = useState<Date | null>(null)
   const [postcode, setPostcode] = useState("")
   const [isAdded, setIsAdded] = useState(false)
- useEffect(() => {
-  if (!isOpen || !plant) return;
+  useEffect(() => {
+    if (!isOpen || !plant) return;
 
-  setLoading(true);
+    setLoading(true);
 
-  axiosInterceptor.get(`/plants/${plant.id}`).then(res => {
-    const plant = res.data.data.plant;
-    setPlantDetails(plant);
+    axiosInterceptor.get(`/plants/${plant.id}`).then(res => {
+      const plant = res.data.data.plant;
+      setPlantDetails(plant);
 
-    // Booked ranges from backend
-    const bookedRanges: { start: Date; end: Date }[] =
-      plant.bookedDateRanges?.map((b: any) => ({
-        start: new Date(b.start),
-        end: new Date(b.end),
-      })) || [];
+      // Booked ranges from backend
+      const bookedRanges: { start: Date; end: Date }[] =
+        plant.bookedDateRanges?.map((b: any) => ({
+          start: new Date(b.start),
+          end: new Date(b.end),
+        })) || [];
 
-    setBookedDates(bookedRanges);
-    setLoading(false);
-  });
-}, [isOpen, plant]);
+      setBookedDates(bookedRanges);
+      setLoading(false);
+    });
+  }, [isOpen, plant]);
 
 
-useEffect(() => {
-  if (isOpen) {
-    setIsAdded(false)
-  }
-}, [isOpen])
+  useEffect(() => {
+    if (isOpen) {
+      setIsAdded(false)
+    }
+  }, [isOpen])
 
 
 
@@ -125,28 +132,49 @@ useEffect(() => {
   /* ================= CLIENT EXCEL PRICING ================= */
 
   const pricing = useMemo(() => {
-    if (rentalDays === 0) return { pricePerDay: 0, totalPrice: 0 }
+    if (rentalDays === 0) return { pricePerDay: 0, totalPrice: 0, breakdown: [] }
 
-    // 1️⃣ Base medium price
+    const breakdown: string[] = []
+
+    // 1️⃣ Base price
     let pricePerDay = BASE_PRICE_PER_DAY
+    breakdown.push(`Base price: £${BASE_PRICE_PER_DAY}`)
 
-    // 2️⃣ Size adjustment
-    pricePerDay *= 1 + SIZE_META[size].adjust / 100
+    // 2️⃣ Size uplift
+    const sizeMultiplier = 1 + SIZE_META[size].adjust / 100
+    pricePerDay *= sizeMultiplier
+    breakdown.push(`${SIZE_META[size].name} size uplift: ×${sizeMultiplier.toFixed(2)}`)
 
-    // 3️⃣ Term discount
-    pricePerDay *= 1 - getTermDiscount(rentalMonths) / 100
+    // 3️⃣ Volume discount (successive per slab)
+    const slabs = Math.floor(numPlants / PLANTS_PER_SLAB) // full slabs
+    const remainder = numPlants % PLANTS_PER_SLAB       // leftover plants
+    let volumeMultiplier = 1
+    for (let i = 0; i < slabs; i++) volumeMultiplier *= 0.85
+    if (remainder > 0) volumeMultiplier *= 0.85  // apply one more for leftover plants
+    pricePerDay *= volumeMultiplier
+    breakdown.push(`Volume discount for ${numPlants} plants: ×${volumeMultiplier.toFixed(2)}`)
 
-    // 4️⃣ Volume discount (successive)
-    pricePerDay = applyVolumeDiscount(pricePerDay, numPlants)
+    // 4️⃣ Term discount
+    const termDiscountPercent = getTermDiscount(rentalMonths) // 24 months → 24%
+    const termMultiplier = 1 - termDiscountPercent / 100
+    pricePerDay *= termMultiplier
+    breakdown.push(`Rental term discount (${termDiscountPercent}%): ×${termMultiplier.toFixed(2)}`)
 
+    // 5️⃣ Round price per day
+    pricePerDay = Math.round(pricePerDay * 100) / 100
+
+    // 6️⃣ Total price
     const totalPrice = Math.round(pricePerDay * rentalDays * numPlants)
 
     return {
-      pricePerDay: Math.round(pricePerDay * 100) / 100,
+      pricePerDay,
       totalPrice,
+      breakdown,
+      monthlyEquivalent: (totalPrice / rentalMonths).toFixed(2),
     }
   }, [size, rentalDays, rentalMonths, numPlants])
-  const isCountryValid = ALLOWED_COUNTRIES.includes(country)
+
+  const isCountryValid = ALLOWED_COUNTIES.includes(country)
 
   const canAddToCart =
     rentalDays >= MIN_RENTAL_DAYS &&
@@ -155,6 +183,7 @@ useEffect(() => {
     endDate &&
     installationDate &&
     isCountryValid
+
   const handleAddToCart = async () => {
     if (!canAddToCart) {
       ErrorToast("Please complete all required fields")
@@ -225,39 +254,61 @@ useEffect(() => {
             </button>
           ))}
         </div>
+        <h3 className="font-semibold mb-2">Pot Type</h3>
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          {(Object.keys(POT_META) as any).map(p => (
+            <button key={p} onClick={() => setPot(p)}
+              className={`border p-3 rounded ${pot === p ? "border-primary ring-2" : ""}`}>
+              {POT_META[p].name}
+            </button>
+          ))}
+        </div>
+
 
         <input type="number" min={3} value={numPlants}
           onChange={e => setNumPlants(Number(e.target.value))}
           className="border p-2 w-full mb-4" />
 
         <h3 className="font-semibold mb-2 flex gap-2"><Calendar /> Rental Period</h3>
-      <DateRangePicker
-  startDate={startDate}
-  endDate={endDate}
-  onDateRangeChange={(s, e) => {
-    setStartDate(s)
-    setEndDate(e)
-  }}
-  bookedDates={bookedDates}
-/>
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onDateRangeChange={(s, e) => {
+            setStartDate(s)
+            setEndDate(e)
+          }}
+          bookedDates={bookedDates}
+        />
 
 
 
         <h3 className="font-semibold mt-4 mb-2 flex gap-2"><MapPin /> Installation</h3>
-        <input type="date" className="border p-2 w-full mb-2"
-          onChange={e => setInstallationDate(new Date(e.target.value))} />
+        <input type="date"
+          className="border p-2 w-full mb-2"
+          onChange={e => {
+            const date = new Date(e.target.value)
+            if (startDate && date < startDate) {
+              ErrorToast("Installation date cannot be before rental start date")
+              setInstallationDate(null)
+            } else {
+              setInstallationDate(date)
+            }
+          }}
+        />
+
         <select
           className="border p-2 w-full"
           value={country}
           onChange={e => setCountry(e.target.value)}
         >
-          <option value="">Select Country</option>
-          {ALLOWED_COUNTRIES.map(c => (
+          <option value="">Select County</option>
+          {ALLOWED_COUNTIES.map(c => (
             <option key={c} value={c}>
               {c}
             </option>
           ))}
         </select>
+
 
 
         <div className="mt-6 border-t pt-4">
@@ -266,6 +317,18 @@ useEffect(() => {
             £{pricing.pricePerDay}/day • {rentalMonths} months
           </p>
         </div>
+        <div className="mt-2 mb-4 text-sm text-muted-foreground">
+          <p className="font-semibold">Price breakdown:</p>
+          <ul className="list-disc ml-5">
+            {pricing.breakdown.map((line, idx) => (
+              <li key={idx}>{line}</li>
+            ))}
+          </ul>
+          <p className="mt-1">
+            Monthly equivalent: £{pricing.monthlyEquivalent}/month
+          </p>
+        </div>
+
 
         <div className="mt-4 flex gap-3">
           <Button disabled={!canAddToCart || isAdded}
