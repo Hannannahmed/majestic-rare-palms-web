@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, type ReactNode } from "react"
 import axiosInterceptor from "@/lib/axiosInterceptor"
+import { ErrorToast } from "@/components/global/ToastContainer"
 
 export interface CartItem {
   plantId: string
@@ -59,7 +60,7 @@ const addToCart = async (item: CartItem) => {
     // You could also call /api/cart/add if you have that
   } catch (err) {
     console.error("Failed to validate cart with API:", err)
-    alert("Failed to add to cart. Please try again.")
+    ErrorToast("Failed to add to cart. Please try again.")
     return
   }
 
@@ -76,12 +77,10 @@ const addToCart = async (item: CartItem) => {
 }
 
 
-  const removeFromCart = async (plantId: string) => {
-   
-      
-      setCartItems([])
-   
-  }
+ const removeFromCart = async (plantId: string) => {
+  setCartItems((prev) => prev.filter((item) => item.plantId !== plantId))
+}
+
 
   const getCartCount = () => cartItems.length
   const clearCart = () => setCartItems([])

@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 import { ArrowLeft, Truck, Check, AlertCircle } from "lucide-react"
 import { CartProvider, useCart } from "@/context/cart-context"
 import { Navbar } from "@/components/navbar"
+import { ErrorToast } from "@/components/global/ToastContainer"
 
 const serviceCounties = [
   "Greater London",
@@ -85,7 +86,7 @@ const serviceCounties = [
       setIsComplete(true)
     } catch (err) {
       console.error(err)
-      alert("Checkout failed, please try again")
+      ErrorToast("Checkout failed, please try again")
     } finally {
       setIsSubmitting(false)
     }

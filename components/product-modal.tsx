@@ -69,8 +69,9 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
 
   const [plantDetails, setPlantDetails] = useState<any>(null)
   const [loading, setLoading] = useState(false)
-const [country, setCountry] = useState("")
-const [bookedDates, setBookedDates] = useState<Date[]>([])
+  const [country, setCountry] = useState("")
+  const [bookedDates, setBookedDates] = useState<{ start: Date; end: Date }[]>([])
+
 
   const [size, setSize] = useState<"small" | "medium" | "large">("medium")
   const [pot, setPot] = useState<"basic" | "ceramic" | "premium">("basic")
@@ -81,38 +82,34 @@ const [bookedDates, setBookedDates] = useState<Date[]>([])
   const [installationDate, setInstallationDate] = useState<Date | null>(null)
   const [postcode, setPostcode] = useState("")
   const [isAdded, setIsAdded] = useState(false)
-
  useEffect(() => {
-  if (!isOpen || !plant) return
+  if (!isOpen || !plant) return;
 
-  setLoading(true)
+  setLoading(true);
 
   axiosInterceptor.get(`/plants/${plant.id}`).then(res => {
-    const plant = res.data.data.plant
-    setPlantDetails(plant)
+    const plant = res.data.data.plant;
+    setPlantDetails(plant);
 
-    // 👇 booked dates from backend
-    const disabledDates =
-      plant.bookings?.flatMap((b: any) => {
-        const start = new Date(b.startDate)
-        const end = new Date(b.endDate)
-        const dates = []
+    // Booked ranges from backend
+    const bookedRanges: { start: Date; end: Date }[] =
+      plant.bookedDateRanges?.map((b: any) => ({
+        start: new Date(b.start),
+        end: new Date(b.end),
+      })) || [];
 
-        for (
-          let d = new Date(start);
-          d <= end;
-          d.setDate(d.getDate() + 1)
-        ) {
-          dates.push(new Date(d))
-        }
+    setBookedDates(bookedRanges);
+    setLoading(false);
+  });
+}, [isOpen, plant]);
 
-        return dates
-      }) || []
 
-    setBookedDates(disabledDates)
-    setLoading(false)
-  })
-}, [isOpen, plant])
+useEffect(() => {
+  if (isOpen) {
+    setIsAdded(false)
+  }
+}, [isOpen])
+
 
 
   /* -------- Rental days (NO extra day bug) -------- */
@@ -149,7 +146,7 @@ const [bookedDates, setBookedDates] = useState<Date[]>([])
       totalPrice,
     }
   }, [size, rentalDays, rentalMonths, numPlants])
-const isCountryValid = ALLOWED_COUNTRIES.includes(country)
+  const isCountryValid = ALLOWED_COUNTRIES.includes(country)
 
   const canAddToCart =
     rentalDays >= MIN_RENTAL_DAYS &&
@@ -158,39 +155,39 @@ const isCountryValid = ALLOWED_COUNTRIES.includes(country)
     endDate &&
     installationDate &&
     isCountryValid
-const handleAddToCart = async () => {
-  if (!canAddToCart) {
-    ErrorToast("Please complete all required fields")
-    return
+  const handleAddToCart = async () => {
+    if (!canAddToCart) {
+      ErrorToast("Please complete all required fields")
+      return
+    }
+
+    try {
+      addToCart({
+        plantId: plantDetails.id,
+        plantName: plantDetails.name,
+        plantImage: plantDetails.images?.[0] || "/placeholder.svg",
+
+        startDate: startDate!.toISOString(),
+        endDate: endDate!.toISOString(),
+        rentalDays,
+
+        pricePerDay: pricing.pricePerDay,
+        totalPrice: pricing.totalPrice,
+        numPlants,
+
+        country,
+        size: SIZE_META[size],
+        pot: POT_META[pot],
+      })
+
+      setIsAdded(true)
+    } catch (error: any) {
+      ErrorToast(
+        error?.response?.data?.message ||
+        "Plant is already booked for the selected dates"
+      )
+    }
   }
-
-  try {
-    addToCart({
-      plantId: plantDetails.id,
-      plantName: plantDetails.name,
-      plantImage: plantDetails.images?.[0] || "/placeholder.svg",
-
-      startDate: startDate!.toISOString(),
-      endDate: endDate!.toISOString(),
-      rentalDays,
-
-      pricePerDay: pricing.pricePerDay,
-      totalPrice: pricing.totalPrice,
-      numPlants,
-
-      country,
-      size: SIZE_META[size],
-      pot: POT_META[pot],
-    })
-
-    setIsAdded(true)
-  } catch (error: any) {
-    ErrorToast(
-      error?.response?.data?.message ||
-      "Plant is already booked for the selected dates"
-    )
-  }
-}
 
   if (!isOpen) return null
   if (loading) return <div className="fixed inset-0 bg-black/50 flex items-center justify-center">Loading…</div>
@@ -203,21 +200,21 @@ const handleAddToCart = async () => {
       <div className="relative bg-white rounded-xl max-w-4xl w-full p-6 overflow-y-auto h-[500px]">
 
         <button onClick={onClose} className="absolute top-4 right-4"><X /></button>
-{/* PLANT HEADER */}
-<div className="flex gap-4 items-center mb-6">
-  <img
-    src={plantDetails?.images?.[0] || "/placeholder.svg"}
-    alt={plantDetails?.name}
-    className="w-28 h-28 object-cover rounded-lg border"
-  />
+        {/* PLANT HEADER */}
+        <div className="flex gap-4 items-center mb-6">
+          <img
+            src={plantDetails?.images?.[0] || "/placeholder.svg"}
+            alt={plantDetails?.name}
+            className="w-28 h-28 object-cover rounded-lg border"
+          />
 
-  <div>
-    <h2 className="text-2xl font-bold">{plantDetails?.name}</h2>
-    <p className="text-sm text-muted-foreground">
-      Choose size, quantity & rental period
-    </p>
-  </div>
-</div>
+          <div>
+            <h2 className="text-2xl font-bold">{plantDetails?.name}</h2>
+            <p className="text-sm text-muted-foreground">
+              Choose size, quantity & rental period
+            </p>
+          </div>
+        </div>
 
         <h3 className="font-semibold mb-2">Plant Size</h3>
         <div className="grid grid-cols-3 gap-3 mb-4">
@@ -234,7 +231,7 @@ const handleAddToCart = async () => {
           className="border p-2 w-full mb-4" />
 
         <h3 className="font-semibold mb-2 flex gap-2"><Calendar /> Rental Period</h3>
-     <DateRangePicker
+      <DateRangePicker
   startDate={startDate}
   endDate={endDate}
   onDateRangeChange={(s, e) => {
@@ -245,21 +242,22 @@ const handleAddToCart = async () => {
 />
 
 
+
         <h3 className="font-semibold mt-4 mb-2 flex gap-2"><MapPin /> Installation</h3>
         <input type="date" className="border p-2 w-full mb-2"
           onChange={e => setInstallationDate(new Date(e.target.value))} />
-   <select
-  className="border p-2 w-full"
-  value={country}
-  onChange={e => setCountry(e.target.value)}
->
-  <option value="">Select Country</option>
-  {ALLOWED_COUNTRIES.map(c => (
-    <option key={c} value={c}>
-      {c}
-    </option>
-  ))}
-</select>
+        <select
+          className="border p-2 w-full"
+          value={country}
+          onChange={e => setCountry(e.target.value)}
+        >
+          <option value="">Select Country</option>
+          {ALLOWED_COUNTRIES.map(c => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
 
 
         <div className="mt-6 border-t pt-4">
