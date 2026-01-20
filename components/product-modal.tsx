@@ -29,10 +29,11 @@ const SIZE_META = {
 }
 
 const POT_META: any = {
-  basic: { id: "basic", name: "Basic Pot", color: "Black" },
-  ceramic: { id: "ceramic", name: "Ceramic Pot", color: "White" },
-  premium: { id: "premium", name: "Premium Pot", color: "Stone Grey" },
+  basic: { id: "basic", name: "Terracotta Clay Pot", color: "Terracotta", image: "/terracotta-clay-pot.jpg" },
+  ceramic: { id: "ceramic", name: "White Ceramic Pot", color: "White", image: "/white-ceramic-pot.png" },
+  premium: { id: "premium", name: "Natural Rattan Basket Pot", color: "Beige", image: "/natural-rattan-basket-pot.jpg" },
 }
+
 
 const TERM_DISCOUNT = [
   { months: 12, discount: 20 },
@@ -254,15 +255,26 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
             </button>
           ))}
         </div>
-        <h3 className="font-semibold mb-2">Pot Type</h3>
-        <div className="grid grid-cols-3 gap-3 mb-4">
-          {(Object.keys(POT_META) as any).map(p => (
-            <button key={p} onClick={() => setPot(p)}
-              className={`border p-3 rounded ${pot === p ? "border-primary ring-2" : ""}`}>
-              {POT_META[p].name}
-            </button>
-          ))}
-        </div>
+      <h3 className="font-semibold mb-2">Pot Type</h3>
+<div className="grid grid-cols-3 gap-3 mb-4">
+  {(Object.keys(POT_META) as any).map(p => (
+    <button
+      key={p}
+      onClick={() => setPot(p)}
+      className={`border rounded-lg p-2 flex flex-col items-center justify-center ${
+        pot === p ? "border-primary ring-2" : ""
+      }`}
+    >
+      <img
+        src={POT_META[p].image}
+        alt={POT_META[p].name}
+        className="w-20 h-20 object-cover mb-1 rounded"
+      />
+      <span className="text-sm text-center">{POT_META[p].name}</span>
+    </button>
+  ))}
+</div>
+
 
 
         <input type="number" min={3} value={numPlants}
