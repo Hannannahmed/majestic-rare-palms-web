@@ -7,9 +7,12 @@ export interface CartItem {
   plantId: string
   plantName: string
   plantImage: string
+
   startDate: string
   endDate: string
+  country: string
   rentalDays: number
+
   pricePerDay: number
   totalPrice: number
   numPlants: number
@@ -19,6 +22,7 @@ export interface CartItem {
     name: string
     height: string
   } | null
+
   pot?: {
     id: string
     name: string
@@ -73,12 +77,10 @@ const addToCart = async (item: CartItem) => {
 
 
   const removeFromCart = async (plantId: string) => {
-    try {
-      await axiosInterceptor.post("/api/cart/remove", { plantId })
-      setCartItems((prev) => prev.filter((item) => item.plantId !== plantId))
-    } catch (err) {
-      console.error("Failed to remove from cart:", err)
-    }
+   
+      
+      setCartItems([])
+   
   }
 
   const getCartCount = () => cartItems.length
