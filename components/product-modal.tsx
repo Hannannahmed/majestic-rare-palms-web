@@ -13,13 +13,8 @@ const MIN_RENTAL_DAYS = 30
 const INSTALLATION_LEAD_DAYS = 14 // client-controllable
 
 /* ================= CLIENT EXCEL INPUTS ================= */
-const ALLOWED_COUNTIES = [
-  "Greater London",
-  "West Midlands",
-  "Merseyside",
-  "Greater Manchester",
-  "West Yorkshire",
-]
+const ALLOWED_COUNTIES = ["Greater London"]
+
 
 const BASE_PRICE_PER_DAY = 5 // £5 (medium plant base)
 
@@ -47,22 +42,13 @@ const PLANTS_PER_SLAB = 5
 const ALLOWED_POSTCODES = ["SW", "SE", "NW", "E", "W"]
 
 /* ================= HELPERS ================= */
-
 function getTermDiscount(months: number) {
+  if (months >= 24) return 24
   if (months >= 12) return 20
   if (months >= 6) return 10
   return 0
 }
 
-function applyVolumeDiscount(price: number, qty: number) {
-  if (qty <= 3) return price
-  const slabs = Math.floor((qty - 3) / PLANTS_PER_SLAB)
-  let p = price
-  for (let i = 0; i < slabs; i++) {
-    p *= (1 - VOLUME_DISCOUNT_PERCENT / 100) // ×0.85
-  }
-  return p
-}
 const ALLOWED_COUNTRIES = [
   "United Kingdom",
   "France",
@@ -93,19 +79,18 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
   const [isAdded, setIsAdded] = useState(false)
 
   useEffect(() => {
-  if (!startDate) {
-    setInstallationDate(null)
-    return
-  }
+    if (!startDate) {
+      setInstallationDate(null)
+      return
+    }
 
-  const minInstallDate = new Date(startDate)
-  minInstallDate.setDate(minInstallDate.getDate() + INSTALLATION_LEAD_DAYS)
+    const minInstallDate = new Date(startDate)
+    minInstallDate.setDate(minInstallDate.getDate() + INSTALLATION_LEAD_DAYS)
 
-  if (!installationDate || installationDate < minInstallDate) {
-    setInstallationDate(minInstallDate)
-  }
-}, [startDate])
-
+    if (!installationDate || installationDate < minInstallDate) {
+      setInstallationDate(minInstallDate)
+    }
+  }, [startDate])
 
   useEffect(() => {
     if (!isOpen || !plant) return;
@@ -136,6 +121,12 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
   }, [isOpen])
 
 
+  // ✅ EARLIEST selectable rental start date
+  const EARLIEST_START_DATE = useMemo(() => {
+    const d = new Date()
+    d.setDate(d.getDate() + INSTALLATION_LEAD_DAYS)
+    return d
+  }, [])
 
   /* -------- Rental days (NO extra day bug) -------- */
   const rentalDays = useMemo(() => {
@@ -145,7 +136,7 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
     )
   }, [startDate, endDate])
 
-  const rentalMonths = Math.round(rentalDays / 30)
+const rentalMonths = Math.round(rentalDays / 30)
 
   /* ================= CLIENT EXCEL PRICING ================= */
 
@@ -164,12 +155,13 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
     breakdown.push(`${SIZE_META[size].name} size uplift: ×${sizeMultiplier.toFixed(2)}`)
 
     // 3️⃣ Volume discount (successive per slab)
-    const slabs = Math.floor(numPlants / PLANTS_PER_SLAB) // full slabs
-    const remainder = numPlants % PLANTS_PER_SLAB       // leftover plants
-    let volumeMultiplier = 1
-    for (let i = 0; i < slabs; i++) volumeMultiplier *= 0.85
-    if (remainder > 0) volumeMultiplier *= 0.85  // apply one more for leftover plants
-    pricePerDay *= volumeMultiplier
+  const slabs = Math.floor(numPlants / PLANTS_PER_SLAB)
+let volumeMultiplier = 1
+for (let i = 0; i < slabs; i++) {
+  volumeMultiplier *= 0.85
+}
+pricePerDay *= volumeMultiplier
+
     breakdown.push(`Volume discount for ${numPlants} plants: ×${volumeMultiplier.toFixed(2)}`)
 
     // 4️⃣ Term discount
@@ -192,15 +184,15 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
     }
   }, [size, rentalDays, rentalMonths, numPlants])
 
-const [county, setCounty] = useState("")
-const isCountyValid = ALLOWED_COUNTIES.includes(county)
+  const [county, setCounty] = useState("")
+  const isCountyValid = ALLOWED_COUNTIES.includes(county)
 
   const canAddToCart =
-  rentalDays >= MIN_RENTAL_DAYS &&
-  numPlants >= 3 &&
-  startDate &&
-  endDate &&
-  isCountyValid
+    rentalDays >= MIN_RENTAL_DAYS &&
+    numPlants >= 3 &&
+    startDate &&
+    endDate &&
+    isCountyValid
 
 
   const handleAddToCart = async () => {
@@ -301,11 +293,6 @@ const isCountyValid = ALLOWED_COUNTIES.includes(county)
           ))}
         </div>
 
-
-
-
-
-
         <input type="number" min={3} value={numPlants}
           onChange={e => setNumPlants(Number(e.target.value))}
           className="border p-2 w-full mb-4" />
@@ -319,24 +306,26 @@ const isCountyValid = ALLOWED_COUNTIES.includes(county)
             setEndDate(e)
           }}
           bookedDates={bookedDates}
+          minStartDate={EARLIEST_START_DATE} // ✅ YEH ZAROORI
         />
+
 
 
 
         <h3 className="font-semibold mt-4 mb-2 flex gap-2"><MapPin /> Installation</h3>
         <input
-  type="date"
-  className="border p-2 w-full mb-2"
-  min={
-    startDate
-      ? new Date(
-          startDate.getTime() + INSTALLATION_LEAD_DAYS * 86400000
-        ).toISOString().split("T")[0]
-      : undefined
-  }
-  value={installationDate?.toISOString().split("T")[0] || ""}
-  onChange={e => setInstallationDate(new Date(e.target.value))}
-/>
+          type="date"
+          className="border p-2 w-full mb-2"
+          min={
+            startDate
+              ? new Date(
+                startDate.getTime() + INSTALLATION_LEAD_DAYS * 86400000
+              ).toISOString().split("T")[0]
+              : undefined
+          }
+          value={installationDate?.toISOString().split("T")[0] || ""}
+          onChange={e => setInstallationDate(new Date(e.target.value))}
+        />
 
 
         <select

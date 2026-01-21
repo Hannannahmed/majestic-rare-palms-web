@@ -10,12 +10,21 @@ interface DateRangePickerProps {
   onDateRangeChange: (startDate: Date | null, endDate: Date | null) => void
   startDate: Date | null
   endDate: Date | null
+  minStartDate?: Date  
+
 }
 const INSTALLATION_LEAD_DAYS = 14        // changeable later
 const MAX_BOOKING_MONTHS_AHEAD = 36      // business decision
 
 
-export function DateRangePicker({ bookedDates, onDateRangeChange, startDate, endDate }: DateRangePickerProps) {
+export function DateRangePicker({
+  bookedDates,
+  onDateRangeChange,
+  startDate,
+  endDate,
+  minStartDate, // ✅ ADD THIS
+}: DateRangePickerProps) {
+ 
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [selectingEnd, setSelectingEnd] = useState(false)
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
@@ -53,23 +62,23 @@ export function DateRangePicker({ bookedDates, onDateRangeChange, startDate, end
       return checkDate >= startDate && checkDate <= endDate
     })
   }
+const isDateDisabled = (date: Date) => {
+  const checkDate = new Date(date)
+  checkDate.setHours(0, 0, 0, 0)
 
-  const isDateDisabled = (date: Date) => {
-    const checkDate = new Date(date)
-    checkDate.setHours(0, 0, 0, 0)
+  const minSelectableDate = minStartDate
+    ? new Date(minStartDate)
+    : new Date(today)
 
-    const minSelectableDate = new Date(today)
-    minSelectableDate.setDate(minSelectableDate.getDate() + INSTALLATION_LEAD_DAYS)
+  const maxSelectableDate = new Date(today)
+  maxSelectableDate.setMonth(maxSelectableDate.getMonth() + MAX_BOOKING_MONTHS_AHEAD)
 
-    const maxSelectableDate = new Date(today)
-    maxSelectableDate.setMonth(maxSelectableDate.getMonth() + MAX_BOOKING_MONTHS_AHEAD)
-
-    return (
-      checkDate < minSelectableDate ||
-      checkDate > maxSelectableDate ||
-      isDateBooked(checkDate)
-    )
-  }
+  return (
+    checkDate < minSelectableDate ||
+    checkDate > maxSelectableDate ||
+    isDateBooked(checkDate)
+  )
+}
 
 
   const isDateInRange = (date: Date) => {
