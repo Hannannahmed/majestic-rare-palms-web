@@ -13,7 +13,19 @@ const MIN_RENTAL_DAYS = 30
 const INSTALLATION_LEAD_DAYS = 14 // client-controllable
 
 /* ================= CLIENT EXCEL INPUTS ================= */
-const ALLOWED_COUNTIES = ["Greater London"]
+/* ================= CLIENT EXCEL INPUTS ================= */
+const ALLOWED_COUNTIES = [
+  "Kent",
+  "Essex",
+  "Surrey",
+  "London",
+  "Greater London",
+  "Oxfordshire",
+  "Berkshire",
+  "Hertfordshire",
+  "Bedfordshire",
+  "Cambridgeshire",
+]
 
 
 const BASE_PRICE_PER_DAY = 5 // £5 (medium plant base)
