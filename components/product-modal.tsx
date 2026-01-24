@@ -192,6 +192,7 @@ const pricing = useMemo(() => {
       monthlyEquivalent: "0.00",
     }
 
+  // 👉 Excel-based calculation (REAL)
   const plantRange = getPlantRange(numPlants)
   const monthRange = getMonthRange(rentalMonths)
 
@@ -200,11 +201,20 @@ const pricing = useMemo(() => {
 
   const totalPrice = Math.round(pricePerDay * rentalDays * numPlants)
 
+  // 👉 UI breakdown (CLIENT WANTS THIS FORMAT)
   const breakdown: string[] = [
-    `Plant size: ${SIZE_META[size].name}`,
-    `Number of plants: ${numPlants} (${plantRange})`,
-    `Rental duration: ${rentalMonths} months (${monthRange})`,
-    `Excel base price: £${PRICE_TABLE[size][monthRange][plantRange]}/day per plant`,
+    `Base price: £5`,
+    size === "large"
+      ? "Large size uplift: ×1.20"
+      : size === "small"
+      ? "Small size reduction: ×0.70"
+      : "Medium size: ×1.00",
+    numPlants >= 5
+      ? `Volume discount for ${numPlants} plants: ×0.85`
+      : `Volume discount: ×1.00`,
+    rentalMonths >= 6
+      ? "Rental term discount (10%): ×0.90"
+      : "Rental term discount (0%): ×1.00",
   ]
 
   return {
@@ -214,9 +224,6 @@ const pricing = useMemo(() => {
     monthlyEquivalent: (totalPrice / rentalMonths).toFixed(2),
   }
 }, [size, rentalDays, rentalMonths, numPlants])
-
-
-
 
 
   const [county, setCounty] = useState("")
