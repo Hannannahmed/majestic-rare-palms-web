@@ -183,28 +183,38 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
   }, [startDate, endDate])
 
   const rentalMonths = Math.ceil(rentalDays / 30)
-
-  const pricing = useMemo(() => {
-    if (rentalDays === 0)
-      return { pricePerDay: 0, totalPrice: 0, breakdown: [], monthlyEquivalent: "0.00" }
-
-    const plantRange = getPlantRange(numPlants)
-    const monthRange = getMonthRange(rentalMonths)
-
-    const pricePerDay =
-      PRICE_TABLE[size][monthRange][plantRange]
-
-    const totalPrice = Math.round(pricePerDay * rentalDays * numPlants)
-
+const pricing = useMemo(() => {
+  if (rentalDays === 0)
     return {
-      pricePerDay,
-      totalPrice,
-      breakdown: [
-        `Excel lookup → ${size}, ${plantRange} plants, ${monthRange} months`,
-      ],
-      monthlyEquivalent: (totalPrice / rentalMonths).toFixed(2),
+      pricePerDay: 0,
+      totalPrice: 0,
+      breakdown: [],
+      monthlyEquivalent: "0.00",
     }
-  }, [size, rentalDays, rentalMonths, numPlants])
+
+  const plantRange = getPlantRange(numPlants)
+  const monthRange = getMonthRange(rentalMonths)
+
+  const pricePerDay =
+    PRICE_TABLE[size][monthRange][plantRange]
+
+  const totalPrice = Math.round(pricePerDay * rentalDays * numPlants)
+
+  const breakdown: string[] = [
+    `Plant size: ${SIZE_META[size].name}`,
+    `Number of plants: ${numPlants} (${plantRange})`,
+    `Rental duration: ${rentalMonths} months (${monthRange})`,
+    `Excel base price: £${PRICE_TABLE[size][monthRange][plantRange]}/day per plant`,
+  ]
+
+  return {
+    pricePerDay,
+    totalPrice,
+    breakdown,
+    monthlyEquivalent: (totalPrice / rentalMonths).toFixed(2),
+  }
+}, [size, rentalDays, rentalMonths, numPlants])
+
 
 
 
