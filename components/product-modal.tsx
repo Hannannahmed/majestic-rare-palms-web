@@ -28,8 +28,6 @@ const ALLOWED_COUNTIES = [
 ]
 
 
-const BASE_PRICE_PER_DAY = 5 // £5 (medium plant base)
-
 const SIZE_META = {
   small: { id: "S", name: "Small", height: "60cm", adjust: -30 },
   medium: { id: "M", name: "Medium", height: "100cm", adjust: 0 },
@@ -42,31 +40,61 @@ const POT_META: any = {
   premium: { id: "premium", name: "Natural Rattan Basket Pot", color: "Beige", image: "/natural-rattan-basket-pot.jpg" },
 }
 
-
-const TERM_DISCOUNT = [
-  { months: 12, discount: 20 },
-  { months: 6, discount: 10 },
-]
-
-const VOLUME_DISCOUNT_PERCENT = 15 // cell B2 → ×0.85
-const PLANTS_PER_SLAB = 5
-
-const ALLOWED_POSTCODES = ["SW", "SE", "NW", "E", "W"]
-
-/* ================= HELPERS ================= */
-function getTermDiscount(months: number) {
-  if (months >= 24) return 24
-  if (months >= 12) return 20
-  if (months >= 6) return 10
-  return 0
+const PRICE_TABLE = {
+  medium: {
+    "1-3": { "1-5": 5.3, "6-10": 4.5, "11-15": 3.8, "16-20": 3.3, "21-25": 2.8 },
+    "3-6": { "1-5": 4.7, "6-10": 4.0, "11-15": 3.4, "16-20": 2.9, "21-25": 2.4 },
+    "6-12": { "1-5": 4.3, "6-10": 3.6, "11-15": 3.0, "16-20": 2.6, "21-25": 2.0 },
+    "12-18": { "1-5": 3.8, "6-10": 3.2, "11-15": 2.7, "16-20": 2.3, "21-25": 1.7 },
+    "18-24": { "1-5": 3.3, "6-10": 2.7, "11-15": 2.2, "16-20": 1.8, "21-25": 1.2 },
+  },
+  small: {
+    "1-3": { "1-5": 3.9, "6-10": 3.3, "11-15": 2.8, "16-20": 2.3, "21-25": 1.9 },
+    "3-6": { "1-5": 3.5, "6-10": 3.0, "11-15": 2.5, "16-20": 2.0, "21-25": 1.7 },
+    "6-12": { "1-5": 3.2, "6-10": 2.7, "11-15": 2.3, "16-20": 1.8, "21-25": 1.4 },
+    "12-18": { "1-5": 2.7, "6-10": 2.3, "11-15": 1.8, "16-20": 1.5, "21-25": 1.2 },
+    "18-24": { "1-5": 2.2, "6-10": 1.8, "11-15": 1.4, "16-20": 1.1, "21-25": 0.8 },
+  },
+  large: {
+    "1-3": { "1-5": 6.5, "6-10": 5.4, "11-15": 4.6, "16-20": 3.9, "21-25": 3.3 },
+    "3-6": { "1-5": 5.8, "6-10": 5.1, "11-15": 4.3, "16-20": 3.7, "21-25": 2.9 },
+    "6-12": { "1-5": 5.0, "6-10": 4.3, "11-15": 3.7, "16-20": 3.1, "21-25": 2.7 },
+    "12-18": { "1-5": 4.5, "6-10": 3.9, "11-15": 3.3, "16-20": 2.8, "21-25": 2.4 },
+    "18-24": { "1-5": 4.0, "6-10": 3.3, "11-15": 2.8, "16-20": 2.4, "21-25": 2.0 },
+  },
+}
+function getPlantRange(num: number) {
+  if (num <= 5) return "1-5"
+  if (num <= 10) return "6-10"
+  if (num <= 15) return "11-15"
+  if (num <= 20) return "16-20"
+  return "21-25"
 }
 
-const ALLOWED_COUNTRIES = [
-  "United Kingdom",
-  "France",
-  "Germany",
-  "Netherlands",
-]
+function getMonthRange(months: number) {
+  if (months <= 3) return "1-3"
+  if (months <= 6) return "3-6"
+  if (months <= 12) return "6-12"
+  if (months <= 18) return "12-18"
+  return "18-24"
+}
+
+function getMediumPrice(numPlants: number, months: number) {
+  // Client / Excel confirmed case
+  if (numPlants === 7 && months === 3) return 4.5
+
+  // fallback (jab tak full table nahi aata)
+  return 4.5
+}
+
+function applySizeFromMedium(
+  mediumPrice: number,
+  size: "small" | "medium" | "large"
+) {
+  if (size === "small") return mediumPrice - 1.6
+  if (size === "large") return mediumPrice + 0.6
+  return mediumPrice
+}
 
 /* ================= COMPONENT ================= */
 
@@ -139,6 +167,12 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
     d.setDate(d.getDate() + INSTALLATION_LEAD_DAYS)
     return d
   }, [])
+  function getBasePricePerDay(numPlants: number) {
+    if (numPlants >= 15) return 4.7
+    if (numPlants >= 10) return 5.2
+    if (numPlants >= 5) return 5.7
+    return 6.2
+  }
 
   /* -------- Rental days (NO extra day bug) -------- */
   const rentalDays = useMemo(() => {
@@ -148,53 +182,32 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
     )
   }, [startDate, endDate])
 
-const rentalMonths = Math.round(rentalDays / 30)
-
-  /* ================= CLIENT EXCEL PRICING ================= */
+  const rentalMonths = Math.ceil(rentalDays / 30)
 
   const pricing = useMemo(() => {
-    if (rentalDays === 0) return { pricePerDay: 0, totalPrice: 0, breakdown: [] }
+    if (rentalDays === 0)
+      return { pricePerDay: 0, totalPrice: 0, breakdown: [], monthlyEquivalent: "0.00" }
 
-    const breakdown: string[] = []
+    const plantRange = getPlantRange(numPlants)
+    const monthRange = getMonthRange(rentalMonths)
 
-    // 1️⃣ Base price
-    let pricePerDay = BASE_PRICE_PER_DAY
-    breakdown.push(`Base price: £${BASE_PRICE_PER_DAY}`)
+    const pricePerDay =
+      PRICE_TABLE[size][monthRange][plantRange]
 
-    // 2️⃣ Size uplift
-    const sizeMultiplier = 1 + SIZE_META[size].adjust / 100
-    pricePerDay *= sizeMultiplier
-    breakdown.push(`${SIZE_META[size].name} size uplift: ×${sizeMultiplier.toFixed(2)}`)
-
-    // 3️⃣ Volume discount (successive per slab)
-  const slabs = Math.floor(numPlants / PLANTS_PER_SLAB)
-let volumeMultiplier = 1
-for (let i = 0; i < slabs; i++) {
-  volumeMultiplier *= 0.85
-}
-pricePerDay *= volumeMultiplier
-
-    breakdown.push(`Volume discount for ${numPlants} plants: ×${volumeMultiplier.toFixed(2)}`)
-
-    // 4️⃣ Term discount
-    const termDiscountPercent = getTermDiscount(rentalMonths) // 24 months → 24%
-    const termMultiplier = 1 - termDiscountPercent / 100
-    pricePerDay *= termMultiplier
-    breakdown.push(`Rental term discount (${termDiscountPercent}%): ×${termMultiplier.toFixed(2)}`)
-
-    // 5️⃣ Round price per day
-    pricePerDay = Math.round(pricePerDay * 100) / 100
-
-    // 6️⃣ Total price
     const totalPrice = Math.round(pricePerDay * rentalDays * numPlants)
 
     return {
       pricePerDay,
       totalPrice,
-      breakdown,
+      breakdown: [
+        `Excel lookup → ${size}, ${plantRange} plants, ${monthRange} months`,
+      ],
       monthlyEquivalent: (totalPrice / rentalMonths).toFixed(2),
     }
   }, [size, rentalDays, rentalMonths, numPlants])
+
+
+
 
   const [county, setCounty] = useState("")
   const isCountyValid = ALLOWED_COUNTIES.includes(county)
