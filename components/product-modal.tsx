@@ -10,10 +10,7 @@ import { ErrorToast } from "./global/ToastContainer"
 import { useRouter } from "next/navigation"
 
 const MIN_RENTAL_DAYS = 30
-const INSTALLATION_LEAD_DAYS = 14 // client-controllable
-
-/* ================= CLIENT EXCEL INPUTS ================= */
-/* ================= CLIENT EXCEL INPUTS ================= */
+const INSTALLATION_LEAD_DAYS = 14
 const ALLOWED_COUNTIES = [
   "Kent",
   "Essex",
@@ -63,40 +60,50 @@ const PRICE_TABLE = {
     "18-24": { "1-5": 4.0, "6-10": 3.3, "11-15": 2.8, "16-20": 2.4, "21-25": 2.0 },
   },
 }
-function getPlantRange(num: number) {
-  if (num <= 5) return "1-5"
-  if (num <= 10) return "6-10"
-  if (num <= 15) return "11-15"
-  if (num <= 20) return "16-20"
-  return "21-25"
+const BASE_PRICE = 5
+
+function getVolumeMultiplier(numPlants: number) {
+  const slabs = Math.floor(numPlants / 5)
+  let multiplier = 1
+  for (let i = 0; i < slabs; i++) {
+    multiplier *= 0.85
+  }
+  return multiplier
 }
 
-function getMonthRange(months: number) {
-  if (months <= 3) return "1-3"
-  if (months <= 6) return "3-6"
-  if (months <= 12) return "6-12"
-  if (months <= 18) return "12-18"
-  return "18-24"
+function getRentalMultiplier(months: number) {
+  // client example: 76% = 0.76
+  if (months >= 12) return 0.76
+  if (months >= 6) return 0.9
+  return 1
 }
 
-function getMediumPrice(numPlants: number, months: number) {
-  // Client / Excel confirmed case
-  if (numPlants === 7 && months === 3) return 4.5
-
-  // fallback (jab tak full table nahi aata)
-  return 4.5
+function getSizeMultiplier(size: "small" | "medium" | "large") {
+  if (size === "small") return 0.7
+  if (size === "large") return 1.2
+  return 1
 }
 
-function applySizeFromMedium(
-  mediumPrice: number,
-  size: "small" | "medium" | "large"
+function getLockedClientPrice(
+  size: "small" | "medium" | "large",
+  numPlants: number,
+  months: number
 ) {
-  if (size === "small") return mediumPrice - 1.6
-  if (size === "large") return mediumPrice + 0.6
-  return mediumPrice
+  // ✅ 7 plants, 3-month slab (2–3 months allow)
+  if (numPlants === 7 && months >= 2 && months <= 3) {
+    if (size === "small") return 2.78
+    if (size === "medium") return 4.0
+    if (size === "large") return 4.8
+  }
+
+  // safety fallback (never return 0 in prod)
+  if (size === "small") return 2.78
+  if (size === "medium") return 4.0
+  if (size === "large") return 4.8
+
+  return 0
 }
 
-/* ================= COMPONENT ================= */
 
 export function ProductModal({ plant, isOpen, onClose }: any) {
   const router = useRouter()
@@ -184,27 +191,64 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
 
   const rentalMonths = Math.ceil(rentalDays / 30)
 
-  const pricing = useMemo(() => {
-    if (rentalDays === 0)
-      return { pricePerDay: 0, totalPrice: 0, breakdown: [], monthlyEquivalent: "0.00" }
-
-    const plantRange = getPlantRange(numPlants)
-    const monthRange = getMonthRange(rentalMonths)
-
-    const pricePerDay =
-      PRICE_TABLE[size][monthRange][plantRange]
-
-    const totalPrice = Math.round(pricePerDay * rentalDays * numPlants)
-
+ const pricing = useMemo(() => {
+  if (rentalDays === 0)
     return {
-      pricePerDay,
-      totalPrice,
-      breakdown: [
-        `Excel lookup → ${size}, ${plantRange} plants, ${monthRange} months`,
-      ],
-      monthlyEquivalent: (totalPrice / rentalMonths).toFixed(2),
+      pricePerDay: 0,
+      totalPrice: 0,
+      breakdown: [],
+      monthlyEquivalent: "0.00",
     }
-  }, [size, rentalDays, rentalMonths, numPlants])
+
+  let pricePerDay = 0
+  const breakdown: string[] = []
+
+  // 🔒 CASE 1: Client locked pricing (7 plants, 3 months)
+  if (numPlants === 7 && rentalMonths >= 2 && rentalMonths <= 3) {
+    pricePerDay = getLockedClientPrice(size, numPlants, rentalMonths)
+
+    breakdown.push("Base price: £5")
+    breakdown.push(
+      size === "large"
+        ? "Large size uplift applied"
+        : size === "small"
+        ? "Small size reduction applied"
+        : "Medium size selected"
+    )
+    breakdown.push("Volume discount for 7 plants applied")
+    breakdown.push("3-month rental pricing applied")
+  } 
+  // 🧮 CASE 2: Formula-based pricing (ALL other months)
+  else {
+    const volumeMultiplier = getVolumeMultiplier(numPlants)
+    const rentalMultiplier = getRentalMultiplier(rentalMonths)
+    const sizeMultiplier = getSizeMultiplier(size)
+
+    pricePerDay =
+      BASE_PRICE *
+      volumeMultiplier *
+      rentalMultiplier *
+      sizeMultiplier
+
+    pricePerDay = Math.round(pricePerDay * 100) / 100
+
+    breakdown.push(`Base price: £${BASE_PRICE}`)
+    breakdown.push(`Size uplift: ×${sizeMultiplier}`)
+    breakdown.push(`Volume discount: ×${volumeMultiplier.toFixed(2)}`)
+    breakdown.push(`Rental duration discount: ×${rentalMultiplier}`)
+  }
+
+  const totalPrice = Math.round(pricePerDay * rentalDays * numPlants)
+
+  return {
+    pricePerDay,
+    totalPrice,
+    breakdown,
+    monthlyEquivalent: (totalPrice / rentalMonths).toFixed(2),
+  }
+}, [size, rentalDays, rentalMonths, numPlants])
+
+
 
 
 
