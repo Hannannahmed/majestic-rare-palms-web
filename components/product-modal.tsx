@@ -103,6 +103,13 @@ function getLockedClientPrice(
 
   return 0
 }
+function getMonthRange(months: number) {
+  if (months <= 3) return "1-3"
+  if (months <= 6) return "3-6"
+  if (months <= 12) return "6-12"
+  if (months <= 18) return "12-18"
+  return "18-24"
+}
 
 
 export function ProductModal({ plant, isOpen, onClose }: any) {
@@ -189,9 +196,10 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
     )
   }, [startDate, endDate])
 
-  const rentalMonths = Math.ceil(rentalDays / 30)
+const rawMonths = Math.ceil(rentalDays / 30)
+const rentalMonths = Math.min(rawMonths, 24)
 
- const pricing = useMemo(() => {
+const pricing = useMemo(() => {
   if (rentalDays === 0)
     return {
       pricePerDay: 0,
@@ -218,24 +226,27 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
     breakdown.push("Volume discount for 7 plants applied")
     breakdown.push("3-month rental pricing applied")
   } 
-  // 🧮 CASE 2: Formula-based pricing (ALL other months)
+  // ✅ CASE 2: TABLE-BASED pricing (client rule)
   else {
-    const volumeMultiplier = getVolumeMultiplier(numPlants)
-    const rentalMultiplier = getRentalMultiplier(rentalMonths)
-    const sizeMultiplier = getSizeMultiplier(size)
+    const plantRange =
+      numPlants <= 5
+        ? "1-5"
+        : numPlants <= 10
+        ? "6-10"
+        : numPlants <= 15
+        ? "11-15"
+        : numPlants <= 20
+        ? "16-20"
+        : "21-25"
 
-    pricePerDay =
-      BASE_PRICE *
-      volumeMultiplier *
-      rentalMultiplier *
-      sizeMultiplier
+    const monthRange = getMonthRange(rentalMonths)
 
-    pricePerDay = Math.round(pricePerDay * 100) / 100
+    pricePerDay = PRICE_TABLE[size][monthRange][plantRange]
 
-    breakdown.push(`Base price: £${BASE_PRICE}`)
-    breakdown.push(`Size uplift: ×${sizeMultiplier}`)
-    breakdown.push(`Volume discount: ×${volumeMultiplier.toFixed(2)}`)
-    breakdown.push(`Rental duration discount: ×${rentalMultiplier}`)
+    breakdown.push(`Base price: £5`)
+    breakdown.push(`${SIZE_META[size].name} size applied`)
+    breakdown.push(`Plants range: ${plantRange}`)
+    breakdown.push(`Rental period: ${monthRange} months`)
   }
 
   const totalPrice = Math.round(pricePerDay * rentalDays * numPlants)
@@ -247,6 +258,7 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
     monthlyEquivalent: (totalPrice / rentalMonths).toFixed(2),
   }
 }, [size, rentalDays, rentalMonths, numPlants])
+
 
 
 
