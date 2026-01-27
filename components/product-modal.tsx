@@ -50,7 +50,14 @@ const PRICE_TABLE = {
     "3-6": { "1-5": 3.5, "6-10": 3.0, "11-15": 2.5, "16-20": 2.0, "21-25": 1.7 },
     "6-12": { "1-5": 3.2, "6-10": 2.7, "11-15": 2.3, "16-20": 1.8, "21-25": 1.4 },
     "12-18": { "1-5": 2.7, "6-10": 2.3, "11-15": 1.8, "16-20": 1.5, "21-25": 1.2 },
-    "18-24": { "1-5": 2.2, "6-10": 1.8, "11-15": 1.4, "16-20": 1.1, "21-25": 0.8 },
+    "18-24": {
+      "1-5": 2.7,
+      "6-10": 2.3,
+      "11-15": 1.9,
+      "16-20": 1.6,
+      "21-25": 1.2,
+    },
+
   },
   large: {
     "1-3": { "1-5": 6.5, "6-10": 5.4, "11-15": 4.6, "16-20": 3.9, "21-25": 3.3 },
@@ -196,68 +203,68 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
     )
   }, [startDate, endDate])
 
-const rawMonths = Math.ceil(rentalDays / 30)
-const rentalMonths = Math.min(rawMonths, 24)
+  const rawMonths = Math.ceil(rentalDays / 30)
+  const rentalMonths = Math.min(rawMonths, 24)
 
-const pricing = useMemo(() => {
-  if (rentalDays === 0)
-    return {
-      pricePerDay: 0,
-      totalPrice: 0,
-      breakdown: [],
-      monthlyEquivalent: "0.00",
+  const pricing = useMemo(() => {
+    if (rentalDays === 0)
+      return {
+        pricePerDay: 0,
+        totalPrice: 0,
+        breakdown: [],
+        monthlyEquivalent: "0.00",
+      }
+
+    let pricePerDay = 0
+    const breakdown: string[] = []
+
+    // 🔒 CASE 1: Client locked pricing (7 plants, 3 months)
+    if (numPlants === 7 && rentalMonths >= 2 && rentalMonths <= 3) {
+      pricePerDay = getLockedClientPrice(size, numPlants, rentalMonths)
+
+      breakdown.push("Base price: £5")
+      breakdown.push(
+        size === "large"
+          ? "Large size uplift applied"
+          : size === "small"
+            ? "Small size reduction applied"
+            : "Medium size selected"
+      )
+      breakdown.push("Volume discount for 7 plants applied")
+      breakdown.push("3-month rental pricing applied")
+    }
+    // ✅ CASE 2: TABLE-BASED pricing (client rule)
+    else {
+      const plantRange =
+        numPlants <= 5
+          ? "1-5"
+          : numPlants <= 10
+            ? "6-10"
+            : numPlants <= 15
+              ? "11-15"
+              : numPlants <= 20
+                ? "16-20"
+                : "21-25"
+
+      const monthRange = getMonthRange(rentalMonths)
+
+      pricePerDay = PRICE_TABLE[size][monthRange][plantRange]
+
+      breakdown.push(`Base price: £5`)
+      breakdown.push(`${SIZE_META[size].name} size applied`)
+      breakdown.push(`Plants range: ${plantRange}`)
+      breakdown.push(`Rental period: ${monthRange} months`)
     }
 
-  let pricePerDay = 0
-  const breakdown: string[] = []
+    const totalPrice = Math.round(pricePerDay * rentalDays * numPlants)
 
-  // 🔒 CASE 1: Client locked pricing (7 plants, 3 months)
-  if (numPlants === 7 && rentalMonths >= 2 && rentalMonths <= 3) {
-    pricePerDay = getLockedClientPrice(size, numPlants, rentalMonths)
-
-    breakdown.push("Base price: £5")
-    breakdown.push(
-      size === "large"
-        ? "Large size uplift applied"
-        : size === "small"
-        ? "Small size reduction applied"
-        : "Medium size selected"
-    )
-    breakdown.push("Volume discount for 7 plants applied")
-    breakdown.push("3-month rental pricing applied")
-  } 
-  // ✅ CASE 2: TABLE-BASED pricing (client rule)
-  else {
-    const plantRange =
-      numPlants <= 5
-        ? "1-5"
-        : numPlants <= 10
-        ? "6-10"
-        : numPlants <= 15
-        ? "11-15"
-        : numPlants <= 20
-        ? "16-20"
-        : "21-25"
-
-    const monthRange = getMonthRange(rentalMonths)
-
-    pricePerDay = PRICE_TABLE[size][monthRange][plantRange]
-
-    breakdown.push(`Base price: £5`)
-    breakdown.push(`${SIZE_META[size].name} size applied`)
-    breakdown.push(`Plants range: ${plantRange}`)
-    breakdown.push(`Rental period: ${monthRange} months`)
-  }
-
-  const totalPrice = Math.round(pricePerDay * rentalDays * numPlants)
-
-  return {
-    pricePerDay,
-    totalPrice,
-    breakdown,
-    monthlyEquivalent: (totalPrice / rentalMonths).toFixed(2),
-  }
-}, [size, rentalDays, rentalMonths, numPlants])
+    return {
+      pricePerDay,
+      totalPrice,
+      breakdown,
+      monthlyEquivalent: (totalPrice / rentalMonths).toFixed(2),
+    }
+  }, [size, rentalDays, rentalMonths, numPlants])
 
 
 
