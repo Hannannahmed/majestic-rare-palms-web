@@ -263,7 +263,7 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
   const [installationDate, setInstallationDate] = useState<Date | null>(null)
   const [postcode, setPostcode] = useState("")
   const [isAdded, setIsAdded] = useState(false)
-
+// text
   useEffect(() => {
     if (!startDate) {
       setInstallationDate(null)
