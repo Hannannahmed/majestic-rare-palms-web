@@ -38,42 +38,160 @@ const POT_META: any = {
 }
 
 const PRICE_TABLE = {
+  small: {
+    "1": {
+      "3": 4.4,
+      "4-5": 3.7,
+      "6-10": 3.2,
+      "11-15": 2.7,
+      "16-20": 2.3,
+      "21-25": 1.9,
+    },
+    "1-3": {
+      "3": 3.9,
+      "4-5": 3.3,
+      "6-10": 2.8,
+      "11-15": 2.4,
+      "16-20": 2.0,
+      "21-25": 1.7,
+    },
+    "3-6": {
+      "3": 3.5,
+      "4-5": 3.0,
+      "6-10": 2.5,
+      "11-15": 2.1,
+      "16-20": 1.8,
+      "21-25": 1.6,
+    },
+    "6-12": {
+      "3": 3.2,
+      "4-5": 2.7,
+      "6-10": 2.3,
+      "11-15": 2.0,
+      "16-20": 1.7,
+      "21-25": 1.4,
+    },
+    "12-18": {
+      "3": 2.9,
+      "4-5": 2.5,
+      "6-10": 2.1,
+      "11-15": 1.8,
+      "16-20": 1.5,
+      "21-25": 1.3,
+    },
+    "18-24": {
+      "3": 2.7,
+      "4-5": 2.3,
+      "6-10": 1.9,
+      "11-15": 1.6,
+      "16-20": 1.4,
+      "21-25": 1.2,
+    },
+  },
+
   medium: {
-    "1-3": { "1-5": 5.3, "6-10": 4.5, "11-15": 3.8, "16-20": 3.3, "21-25": 2.8 },
-    "3-6": { "1-5": 4.7, "6-10": 4.0, "11-15": 3.4, "16-20": 2.9, "21-25": 2.4 },
-    "6-12": { "1-5": 4.3, "6-10": 3.6, "11-15": 3.0, "16-20": 2.6, "21-25": 2.0 },
-    "12-18": { "1-5": 3.8, "6-10": 3.2, "11-15": 2.7, "16-20": 2.3, "21-25": 1.7 },
-    "18-24": { "1-5": 3.3, "6-10": 2.7, "11-15": 2.2, "16-20": 1.8, "21-25": 1.2 },
-  },
-small: {
-  "1-3": { "1-5": 3.9, "6-10": 3.3, "11-15": 2.8, "16-20": 2.3, "21-25": 1.9 },
-  "3-6": { "1-5": 3.5, "6-10": 3.0, "11-15": 2.5, "16-20": 2.0, "21-25": 1.7 },
-  "6-12": { "1-5": 3.2, "6-10": 2.7, "11-15": 2.3, "16-20": 1.8, "21-25": 1.4 },
-  "12-18": { 
-    "1-5": 2.9,  // ✅ FIXED (was 2.7)
-    "6-10": 2.5,
-    "11-15": 2.1,
-    "16-20": 1.8,
-    "21-25": 1.5,
-  },
-  "18-24": {
-    "1-5": 2.7,
-    "6-10": 2.3,
-    "11-15": 1.9,
-    "16-20": 1.6,
-    "21-25": 1.2,
-  },
-
-
+    "1": {
+      "3": 6.3,
+      "4-5": 5.3,
+      "6-10": 4.5,
+      "11-15": 3.8,
+      "16-20": 3.3,
+      "21-25": 2.8,
+    },
+    "1-3": {
+      "3": 5.5,
+      "4-5": 4.7,
+      "6-10": 4.0,
+      "11-15": 3.4,
+      "16-20": 2.9,
+      "21-25": 2.4,
+    },
+    "3-6": {
+      "3": 5.0,
+      "4-5": 4.3,
+      "6-10": 3.6,
+      "11-15": 3.1,
+      "16-20": 2.6,
+      "21-25": 2.2,
+    },
+    "6-12": {
+      "3": 4.6,
+      "4-5": 3.9,
+      "6-10": 3.3,
+      "11-15": 2.8,
+      "16-20": 2.4,
+      "21-25": 2.0,
+    },
+    "12-18": {
+      "3": 4.2,
+      "4-5": 3.6,
+      "6-10": 3.0,
+      "11-15": 2.6,
+      "16-20": 2.2,
+      "21-25": 1.9,
+    },
+    "18-24": {
+      "3": 3.8,
+      "4-5": 3.2,
+      "6-10": 2.7,
+      "11-15": 2.3,
+      "16-20": 2.0,
+      "21-25": 1.7,
+    },
   },
   large: {
-    "1-3": { "1-5": 6.5, "6-10": 5.4, "11-15": 4.6, "16-20": 3.9, "21-25": 3.3 },
-    "3-6": { "1-5": 5.8, "6-10": 5.1, "11-15": 4.3, "16-20": 3.7, "21-25": 2.9 },
-    "6-12": { "1-5": 5.0, "6-10": 4.3, "11-15": 3.7, "16-20": 3.1, "21-25": 2.7 },
-    "12-18": { "1-5": 4.5, "6-10": 3.9, "11-15": 3.3, "16-20": 2.8, "21-25": 2.4 },
-    "18-24": { "1-5": 4.0, "6-10": 3.3, "11-15": 2.8, "16-20": 2.4, "21-25": 2.0 },
-  },
+    "1": {
+      "3": 7.5,
+      "4-5": 6.4,
+      "6-10": 5.4,
+      "11-15": 4.6,
+      "16-20": 3.9,
+      "21-25": 3.3,
+    },
+    "1-3": {
+      "3": 6.6,
+      "4-5": 5.6,
+      "6-10": 4.8,
+      "11-15": 4.1,
+      "16-20": 3.4,
+      "21-25": 2.9,
+    },
+    "3-6": {
+      "3": 6.0,
+      "4-5": 5.1,
+      "6-10": 4.3,
+      "11-15": 3.7,
+      "16-20": 3.1,
+      "21-25": 2.7,
+    },
+    "6-12": {
+      "3": 5.5,
+      "4-5": 4.7,
+      "6-10": 4.0,
+      "11-15": 3.4,
+      "16-20": 2.9,
+      "21-25": 2.4,
+    },
+    "12-18": {
+      "3": 5.0,
+      "4-5": 4.3,
+      "6-10": 3.6,
+      "11-15": 3.1,
+      "16-20": 2.6,
+      "21-25": 2.2,
+    },
+    "18-24": {
+      "3": 4.6,
+      "4-5": 3.9,
+      "6-10": 3.3,
+      "11-15": 2.8,
+      "16-20": 2.4,
+      "21-25": 2.0,
+    },
+  }
+  ,
 }
+
 const BASE_PRICE = 5
 
 function getVolumeMultiplier(numPlants: number) {
@@ -213,68 +331,68 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
   const rawMonths = Math.ceil(rentalDays / 30)
   const rentalMonths = Math.min(rawMonths, 24)
 
-  const pricing = useMemo(() => {
-    if (rentalDays === 0)
-      return {
-        pricePerDay: 0,
-        totalPrice: 0,
-        breakdown: [],
-        monthlyEquivalent: "0.00",
-      }
 
-    let pricePerDay = 0
-    const breakdown: string[] = []
+  function getPlantRange(numPlants: number) {
+    if (numPlants === 3) return "3"
+    if (numPlants <= 5) return "4-5"
+    if (numPlants <= 10) return "6-10"
+    if (numPlants <= 15) return "11-15"
+    if (numPlants <= 20) return "16-20"
+    return "21-25"
+  }
 
-    // 🔒 CASE 1: Client locked pricing (7 plants, 3 months)
-    if (numPlants === 7 && rentalMonths >= 2 && rentalMonths <= 3) {
-      pricePerDay = getLockedClientPrice(size, numPlants, rentalMonths)
 
-      breakdown.push("Base price: £5")
-      breakdown.push(
-        size === "large"
-          ? "Large size uplift applied"
-          : size === "small"
-            ? "Small size reduction applied"
-            : "Medium size selected"
-      )
-      breakdown.push("Volume discount for 7 plants applied")
-      breakdown.push("3-month rental pricing applied")
-    }
-    // ✅ CASE 2: TABLE-BASED pricing (client rule)
-    else {
-      const plantRange =
-        numPlants <= 5
-          ? "1-5"
-          : numPlants <= 10
-            ? "6-10"
-            : numPlants <= 15
-              ? "11-15"
-              : numPlants <= 20
-                ? "16-20"
-                : "21-25"
+  function calculateSheetPrice({
+    size,
+    numPlants,
+    rentalDays,
+  }: {
+    size: "small" | "medium" | "large"
+    numPlants: number
+    rentalDays: number
+  }) {
+    if (rentalDays === 0) return { pricePerDay: 0, total: 0 }
 
-      const monthRange = getMonthRange(rentalMonths)
+    const months = Math.ceil(rentalDays / 30)
 
-      pricePerDay = PRICE_TABLE[size][monthRange][plantRange]
+    const monthRange = getMonthRange(months)
+    const plantRange = getPlantRange(numPlants)
 
-      breakdown.push(`Base price: £5`)
-      breakdown.push(`${SIZE_META[size].name} size applied`)
-      breakdown.push(`Plants range: ${plantRange}`)
-      breakdown.push(`Rental period: ${monthRange} months`)
-    }
+    const pricePerDay =
+      PRICE_TABLE[size][monthRange][plantRange]
 
-    const totalPrice = Math.round(pricePerDay * rentalDays * numPlants)
+    const total =
+      Math.round(pricePerDay * rentalDays * numPlants)
 
     return {
       pricePerDay,
-      totalPrice,
-      breakdown,
-      monthlyEquivalent: (totalPrice / rentalMonths).toFixed(2),
+      total,
+      monthRange,
+      plantRange,
     }
-  }, [size, rentalDays, rentalMonths, numPlants])
+  }
 
+  const pricing = useMemo(() => {
+    const result = calculateSheetPrice({
+      size,
+      numPlants,
+      rentalDays,
+    })
 
-
+    return {
+      pricePerDay: result.pricePerDay,
+      totalPrice: result.total,
+      breakdown: [
+        `Size: ${size}`,
+        `Plants: ${result.plantRange}`,
+        `Months: ${result.monthRange}`,
+        `£${result.pricePerDay} per plant / day`,
+      ],
+      monthlyEquivalent: (
+        result.total / Math.ceil(rentalDays / 30)
+      ).toFixed(2),
+    }
+  }, [size, numPlants, rentalDays])
 
 
 
