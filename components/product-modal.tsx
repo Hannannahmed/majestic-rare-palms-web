@@ -239,10 +239,11 @@ function getMonthRange(months: number) {
   if (months <= 1) return "1";
   if (months <= 3) return "1-3";
   if (months <= 6) return "3-6";
-  if (months <= 12) return "6-12";
-  if (months <= 18) return "12-18";
+  if (months <= 12) return "6-12";      // ✅ 12 stays here
+  if (months > 12 && months <= 18) return "12-18"; // ✅ only >12
   return "18-24";
 }
+
 
 
 
@@ -358,7 +359,8 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
 
     const months = Math.ceil(rentalDays / 30)
 
-    const monthRange = getMonthRange(months)
+    const monthRange = getMonthRange(months-1)
+    console.log(monthRange,months,"months Range")
     const plantRange = getPlantRange(numPlants)
 
     const pricePerDay =
