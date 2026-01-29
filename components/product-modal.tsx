@@ -236,12 +236,14 @@ function getLockedClientPrice(
   return 0
 }
 function getMonthRange(months: number) {
-  if (months <= 3) return "1-3"
-  if (months <= 6) return "3-6"
-  if (months <= 12) return "6-12"
-  if (months <= 18) return "12-18"
-  return "18-24"
+  if (months <= 1) return "1";
+  if (months <= 3) return "1-3";
+  if (months <= 6) return "3-6";
+  if (months <= 12) return "6-12";
+  if (months <= 18) return "12-18";
+  return "18-24";
 }
+
 
 
 export function ProductModal({ plant, isOpen, onClose }: any) {
@@ -263,7 +265,7 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
   const [installationDate, setInstallationDate] = useState<Date | null>(null)
   const [postcode, setPostcode] = useState("")
   const [isAdded, setIsAdded] = useState(false)
-// text
+  // text
   useEffect(() => {
     if (!startDate) {
       setInstallationDate(null)
@@ -329,7 +331,8 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
   }, [startDate, endDate])
 
   const rawMonths = Math.ceil(rentalDays / 30)
-  const rentalMonths = Math.min(rawMonths, 24)
+  const rentalMonths = Math.max(1, Math.floor(rentalDays / 30)) // ensures at least 1 month
+
 
 
   function getPlantRange(numPlants: number) {
@@ -385,7 +388,7 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
       breakdown: [
         `Size: ${size}`,
         `Plants: ${result.plantRange}`,
-        `Months: ${result.monthRange}`,
+        `Months: ${result.monthRange} `,
         `£${result.pricePerDay} per plant / day`,
       ],
       monthlyEquivalent: (
