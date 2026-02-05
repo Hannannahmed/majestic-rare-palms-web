@@ -388,7 +388,10 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
     const pricePerPlantPerDay = PRICE_TABLE[size][monthRange][plantRange];
 
     const dailyTotal = pricePerPlantPerDay * numPlants;
-    const total = Math.round(dailyTotal * rentalDays);
+    const subTotal = dailyTotal * rentalDays;
+
+    // round to 1 decimal but KEEP number
+    const total = Math.round(subTotal * 10) / 10;
 
     const sizeMultiplier = getSizeMultiplier(size);
     const volumeMultiplier = getVolumeMultiplier(numPlants);
@@ -416,7 +419,10 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
 
     return {
       pricePerDay: result.pricePerDay,
-      totalPrice: result.total,
+
+      total: result.total, // ✅ number (for logic/cart)
+      totalFormatted: `£${result.total.toFixed(1)}`, // ✅ string (for UI)
+
       days: result.days,
       months: result.months,
       monthRange: result.monthRange,
@@ -433,7 +439,9 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
       ],
 
       monthlyEquivalent:
-        result.months > 0 ? (result.total / result.months).toFixed(2) : "0",
+        result.months > 0
+          ? `£${(result.total / result.months).toFixed(2)}`
+          : "£0",
     };
   }, [size, numPlants, rentalDays]);
 
@@ -464,9 +472,9 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
         rentalDays,
 
         pricePerDay: pricing.pricePerDay,
-        totalPrice: pricing.totalPrice,
-        numPlants,
+        totalPrice: pricing.total, // ✅ NUMBER
 
+        numPlants,
         country,
         size: SIZE_META[size],
         pot: POT_META[pot],
@@ -612,7 +620,7 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
 
         <div className="mt-6 border-t pt-4">
           <p>
-            Total: <b>£{pricing.totalPrice}</b>
+            Total: <b>£{pricing.total}</b>
           </p>
           <p className="text-sm text-muted-foreground">
             £{pricing.pricePerDay}/day • {rentalMonths} months
