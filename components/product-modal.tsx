@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useMemo } from "react"
-import { X, ShoppingBag, Check, Calendar, MapPin } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { DateRangePicker } from "@/components/date-range-picker"
-import { useCart } from "@/context/cart-context"
-import axiosInterceptor from "@/lib/axiosInterceptor"
-import { ErrorToast } from "./global/ToastContainer"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, useMemo } from "react";
+import { X, ShoppingBag, Check, Calendar, MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DateRangePicker } from "@/components/date-range-picker";
+import { useCart } from "@/context/cart-context";
+import axiosInterceptor from "@/lib/axiosInterceptor";
+import { ErrorToast } from "./global/ToastContainer";
+import { useRouter } from "next/navigation";
 
-const MIN_RENTAL_DAYS = 30
-const INSTALLATION_LEAD_DAYS = 14
+const MIN_RENTAL_DAYS = 30;
+const INSTALLATION_LEAD_DAYS = 14;
 const ALLOWED_COUNTIES = [
   "Kent",
   "Essex",
@@ -22,20 +22,34 @@ const ALLOWED_COUNTIES = [
   "Hertfordshire",
   "Bedfordshire",
   "Cambridgeshire",
-]
-
+];
 
 const SIZE_META = {
   small: { id: "S", name: "Small", height: "60cm", adjust: -30 },
   medium: { id: "M", name: "Medium", height: "100cm", adjust: 0 },
   large: { id: "L", name: "Large", height: "150cm", adjust: 20 },
-}
+};
 
 const POT_META: any = {
-  basic: { id: "basic", name: "Terracotta Clay Pot", color: "Terracotta", image: "/terracotta-clay-pot.jpg" },
-  ceramic: { id: "ceramic", name: "White Ceramic Pot", color: "White", image: "/white-ceramic-pot.png" },
-  premium: { id: "premium", name: "Natural Rattan Basket Pot", color: "Beige", image: "/natural-rattan-basket-pot.jpg" },
-}
+  basic: {
+    id: "basic",
+    name: "Terracotta Clay Pot",
+    color: "Terracotta",
+    image: "/terracotta-clay-pot.jpg",
+  },
+  ceramic: {
+    id: "ceramic",
+    name: "White Ceramic Pot",
+    color: "White",
+    image: "/white-ceramic-pot.png",
+  },
+  premium: {
+    id: "premium",
+    name: "Natural Rattan Basket Pot",
+    color: "Beige",
+    image: "/natural-rattan-basket-pot.jpg",
+  },
+};
 
 const PRICE_TABLE = {
   small: {
@@ -192,102 +206,99 @@ const PRICE_TABLE = {
   },
 };
 
-
-const BASE_PRICE = 5
+const BASE_PRICE = 5;
 
 function getVolumeMultiplier(numPlants: number) {
-  const slabs = Math.floor(numPlants / 5)
-  let multiplier = 1
+  const slabs = Math.floor(numPlants / 5);
+  let multiplier = 1;
   for (let i = 0; i < slabs; i++) {
-    multiplier *= 0.85
+    multiplier *= 0.85;
   }
-  return multiplier
+  return multiplier;
 }
 
 function getRentalMultiplier(months: number) {
   // client example: 76% = 0.76
-  if (months >= 12) return 0.76
-  if (months >= 6) return 0.9
-  return 1
+  if (months >= 12) return 0.76;
+  if (months >= 6) return 0.9;
+  return 1;
 }
 
 function getSizeMultiplier(size: "small" | "medium" | "large") {
-  if (size === "small") return 0.7
-  if (size === "large") return 1.2
-  return 1
+  if (size === "small") return 0.7;
+  if (size === "large") return 1.2;
+  return 1;
 }
 
 function getLockedClientPrice(
   size: "small" | "medium" | "large",
   numPlants: number,
-  months: number
+  months: number,
 ) {
   // ✅ 7 plants, 3-month slab (2–3 months allow)
   if (numPlants === 7 && months >= 2 && months <= 3) {
-    if (size === "small") return 2.78
-    if (size === "medium") return 4.0
-    if (size === "large") return 4.8
+    if (size === "small") return 2.78;
+    if (size === "medium") return 4.0;
+    if (size === "large") return 4.8;
   }
 
   // safety fallback (never return 0 in prod)
-  if (size === "small") return 2.78
-  if (size === "medium") return 4.0
-  if (size === "large") return 4.8
+  if (size === "small") return 2.78;
+  if (size === "medium") return 4.0;
+  if (size === "large") return 4.8;
 
-  return 0
+  return 0;
 }
 function getMonthRange(months: number) {
   if (months <= 1) return "1";
   if (months <= 3) return "1-3";
   if (months <= 6) return "3-6";
-  if (months <= 12) return "6-12";      // ✅ 12 stays here
+  if (months <= 12) return "6-12"; // ✅ 12 stays here
   if (months > 12 && months <= 18) return "12-18"; // ✅ only >12
   return "18-24";
 }
 
-
-
-
 export function ProductModal({ plant, isOpen, onClose }: any) {
-  const router = useRouter()
-  const { addToCart } = useCart()
+  const router = useRouter();
+  const { addToCart } = useCart();
 
-  const [plantDetails, setPlantDetails] = useState<any>(null)
-  const [loading, setLoading] = useState(false)
-  const [country, setCountry] = useState("")
-  const [bookedDates, setBookedDates] = useState<{ start: Date; end: Date }[]>([])
+  const [plantDetails, setPlantDetails] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [country, setCountry] = useState("");
+  const [bookedDates, setBookedDates] = useState<{ start: Date; end: Date }[]>(
+    [],
+  );
 
+  const [size, setSize] = useState<"small" | "medium" | "large">("medium");
+  const [pot, setPot] = useState<"basic" | "ceramic" | "premium">("basic");
+  const [numPlants, setNumPlants] = useState(3);
 
-  const [size, setSize] = useState<"small" | "medium" | "large">("medium")
-  const [pot, setPot] = useState<"basic" | "ceramic" | "premium">("basic")
-  const [numPlants, setNumPlants] = useState(3)
-
-  const [startDate, setStartDate] = useState<Date | null>(null)
-  const [endDate, setEndDate] = useState<Date | null>(null)
-  const [installationDate, setInstallationDate] = useState<Date | null>(null)
-  const [postcode, setPostcode] = useState("")
-  const [isAdded, setIsAdded] = useState(false)
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [installationDate, setInstallationDate] = useState<Date | null>(null);
+  const [postcode, setPostcode] = useState("");
+  const [isAdded, setIsAdded] = useState(false);
   // text
   useEffect(() => {
     if (!startDate) {
-      setInstallationDate(null)
-      return
+      setInstallationDate(null);
+      return;
     }
 
-    const minInstallDate = new Date(startDate)
-    minInstallDate.setDate(minInstallDate.getDate() + INSTALLATION_LEAD_DAYS)
+    const minInstallDate = new Date(startDate);
+    minInstallDate.setDate(minInstallDate.getDate() + INSTALLATION_LEAD_DAYS);
 
     if (!installationDate || installationDate < minInstallDate) {
-      setInstallationDate(minInstallDate)
+      setInstallationDate(minInstallDate);
     }
-  }, [startDate])
+  }, [startDate]);
 
   useEffect(() => {
     if (!isOpen || !plant) return;
 
     setLoading(true);
 
-    axiosInterceptor.get(`/plants/${plant.id}`).then(res => {
+    axiosInterceptor.get(`/plants/${plant.id}`).then((res) => {
       const plant = res.data.data.plant;
       setPlantDetails(plant);
 
@@ -303,79 +314,97 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
     });
   }, [isOpen, plant]);
 
-
   useEffect(() => {
     if (isOpen) {
-      setIsAdded(false)
+      setIsAdded(false);
     }
-  }, [isOpen])
-
+  }, [isOpen]);
 
   // ✅ EARLIEST selectable rental start date
   const EARLIEST_START_DATE = useMemo(() => {
-    const d = new Date()
-    d.setDate(d.getDate() + INSTALLATION_LEAD_DAYS)
-    return d
-  }, [])
+    const d = new Date();
+    d.setDate(d.getDate() + INSTALLATION_LEAD_DAYS);
+    return d;
+  }, []);
   function getBasePricePerDay(numPlants: number) {
-    if (numPlants >= 15) return 4.7
-    if (numPlants >= 10) return 5.2
-    if (numPlants >= 5) return 5.7
-    return 6.2
+    if (numPlants >= 15) return 4.7;
+    if (numPlants >= 10) return 5.2;
+    if (numPlants >= 5) return 5.7;
+    return 6.2;
   }
 
   /* -------- Rental days (NO extra day bug) -------- */
   const rentalDays = useMemo(() => {
-    if (!startDate || !endDate) return 0
-    return Math.round(
-      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
-    )
-  }, [startDate, endDate])
+    if (!startDate || !endDate) return 0;
 
-  const rawMonths = Math.ceil(rentalDays / 30)
-  const rentalMonths = Math.max(1, Math.floor(rentalDays / 30)) // ensures at least 1 month
+    const start = new Date(startDate);
+    const end = new Date(endDate);
 
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
 
+    return Math.round((end.getTime() - start.getTime()) / 86400000) + 1; // ✅ inclusive
+  }, [startDate, endDate]);
+
+  const rawMonths = Math.ceil(rentalDays / 30);
+  const rentalMonths = Math.max(1, Math.floor(rentalDays / 30)); // ensures at least 1 month
 
   function getPlantRange(numPlants: number) {
-    if (numPlants === 3) return "3"
-    if (numPlants <= 5) return "4-5"
-    if (numPlants <= 10) return "6-10"
-    if (numPlants <= 15) return "11-15"
-    if (numPlants <= 20) return "16-20"
-    return "21-25"
+    if (numPlants === 3) return "3";
+    if (numPlants <= 5) return "4-5";
+    if (numPlants <= 10) return "6-10";
+    if (numPlants <= 15) return "11-15";
+    if (numPlants <= 20) return "16-20";
+    return "21-25";
   }
-
 
   function calculateSheetPrice({
     size,
     numPlants,
     rentalDays,
   }: {
-    size: "small" | "medium" | "large"
-    numPlants: number
-    rentalDays: number
+    size: "small" | "medium" | "large";
+    numPlants: number;
+    rentalDays: number;
   }) {
-    if (rentalDays === 0) return { pricePerDay: 0, total: 0 }
+    if (rentalDays === 0) {
+      return {
+        pricePerDay: 0,
+        total: 0,
+        days: 0,
+        months: 0,
+        monthRange: "",
+        plantRange: "",
+        sizeMultiplier: 1,
+        volumeMultiplier: 1,
+        rentalMultiplier: 1,
+      };
+    }
 
-    const months = Math.ceil(rentalDays / 30)
+    const months = Math.max(1, Math.floor(rentalDays / 30));
+    const monthRange = getMonthRange(months);
+    const plantRange = getPlantRange(numPlants);
 
-    const monthRange = getMonthRange(months-1)
-    console.log(monthRange,months,"months Range")
-    const plantRange = getPlantRange(numPlants)
+    const pricePerPlantPerDay = PRICE_TABLE[size][monthRange][plantRange];
 
-    const pricePerDay =
-      PRICE_TABLE[size][monthRange][plantRange]
+    const dailyTotal = pricePerPlantPerDay * numPlants;
+    const total = Math.round(dailyTotal * rentalDays);
 
-    const total =
-      Math.round(pricePerDay * rentalDays * numPlants)
+    const sizeMultiplier = getSizeMultiplier(size);
+    const volumeMultiplier = getVolumeMultiplier(numPlants);
+    const rentalMultiplier = getRentalMultiplier(months);
 
     return {
-      pricePerDay,
+      pricePerDay: pricePerPlantPerDay,
       total,
+      days: rentalDays,
+      months,
       monthRange,
       plantRange,
-    }
+      sizeMultiplier,
+      volumeMultiplier,
+      rentalMultiplier,
+    };
   }
 
   const pricing = useMemo(() => {
@@ -383,41 +412,45 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
       size,
       numPlants,
       rentalDays,
-    })
+    });
 
     return {
       pricePerDay: result.pricePerDay,
       totalPrice: result.total,
+      days: result.days,
+      months: result.months,
+      monthRange: result.monthRange,
+
       breakdown: [
         `Size: ${size}`,
         `Plants: ${result.plantRange}`,
-        `Months: ${result.monthRange} `,
+        `Rental Period: ${result.monthRange} months`,
+        `Size uplift (${size}): ×${result.sizeMultiplier.toFixed(2)}`,
+        `Volume discount for ${numPlants} plants: ×${result.volumeMultiplier.toFixed(2)}`,
+        `Rental term discount (${result.months} months): ×${result.rentalMultiplier.toFixed(2)}`,
         `£${result.pricePerDay} per plant / day`,
+        `Total days: ${result.days}`,
       ],
-      monthlyEquivalent: (
-        result.total / Math.ceil(rentalDays / 30)
-      ).toFixed(2),
-    }
-  }, [size, numPlants, rentalDays])
 
+      monthlyEquivalent:
+        result.months > 0 ? (result.total / result.months).toFixed(2) : "0",
+    };
+  }, [size, numPlants, rentalDays]);
 
-
-
-  const [county, setCounty] = useState("")
-  const isCountyValid = ALLOWED_COUNTIES.includes(county)
+  const [county, setCounty] = useState("");
+  const isCountyValid = ALLOWED_COUNTIES.includes(county);
 
   const canAddToCart =
     rentalDays >= MIN_RENTAL_DAYS &&
     numPlants >= 3 &&
     startDate &&
     endDate &&
-    isCountyValid
-
+    isCountyValid;
 
   const handleAddToCart = async () => {
     if (!canAddToCart) {
-      ErrorToast("Please complete all required fields")
-      return
+      ErrorToast("Please complete all required fields");
+      return;
     }
 
     try {
@@ -437,19 +470,24 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
         country,
         size: SIZE_META[size],
         pot: POT_META[pot],
-      })
+      });
 
-      setIsAdded(true)
+      setIsAdded(true);
     } catch (error: any) {
       ErrorToast(
         error?.response?.data?.message ||
-        "Plant is already booked for the selected dates"
-      )
+          "Plant is already booked for the selected dates",
+      );
     }
-  }
+  };
 
-  if (!isOpen) return null
-  if (loading) return <div className="fixed inset-0 bg-black/50 flex items-center justify-center">Loading…</div>
+  if (!isOpen) return null;
+  if (loading)
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+        Loading…
+      </div>
+    );
 
   /* ================= UI ================= */
 
@@ -457,8 +495,9 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div className="relative bg-white rounded-xl max-w-4xl w-full p-6 overflow-y-auto h-[500px]">
-
-        <button onClick={onClose} className="absolute top-4 right-4"><X /></button>
+        <button onClick={onClose} className="absolute top-4 right-4">
+          <X />
+        </button>
         {/* PLANT HEADER */}
         <div className="flex gap-4 items-center mb-6">
           <img
@@ -477,30 +516,35 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
 
         <h3 className="font-semibold mb-2">Plant Size</h3>
         <div className="grid grid-cols-3 gap-3 mb-4">
-          {(Object.keys(SIZE_META) as Array<keyof typeof SIZE_META>).map((s) => (
-            <button
-              key={String(s)}
-              onClick={() => setSize(s)}
-              className={`border p-3 rounded ${size === s ? "border-primary ring-2" : ""
+          {(Object.keys(SIZE_META) as Array<keyof typeof SIZE_META>).map(
+            (s) => (
+              <button
+                key={String(s)}
+                onClick={() => setSize(s)}
+                className={`border p-3 rounded ${
+                  size === s ? "border-primary ring-2" : ""
                 }`}
-            >
-              <p className="capitalize">{s}</p>
-            </button>
-          ))}
+              >
+                <p className="capitalize">{s}</p>
+              </button>
+            ),
+          )}
         </div>
-
 
         <h3 className="font-semibold mb-2">Pot Type</h3>
         <div className="grid grid-cols-3 gap-3 mb-4">
-          {(Object.entries(POT_META) as [
-            "basic" | "ceramic" | "premium",
-            (typeof POT_META)["basic"]
-          ][]).map(([p, meta]) => (
+          {(
+            Object.entries(POT_META) as [
+              "basic" | "ceramic" | "premium",
+              (typeof POT_META)["basic"],
+            ][]
+          ).map(([p, meta]) => (
             <button
               key={p}
               onClick={() => setPot(p)}
-              className={`border rounded-lg p-2 flex flex-col items-center justify-center ${pot === p ? "border-primary ring-2" : ""
-                }`}
+              className={`border rounded-lg p-2 flex flex-col items-center justify-center ${
+                pot === p ? "border-primary ring-2" : ""
+              }`}
             >
               <img
                 src={meta.image}
@@ -512,58 +556,64 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
           ))}
         </div>
 
-        <input type="number" min={3} value={numPlants}
-          onChange={e => setNumPlants(Number(e.target.value))}
-          className="border p-2 w-full mb-4" />
+        <input
+          type="number"
+          min={3}
+          value={numPlants}
+          onChange={(e) => setNumPlants(Number(e.target.value))}
+          className="border p-2 w-full mb-4"
+        />
 
-        <h3 className="font-semibold mb-2 flex gap-2"><Calendar /> Rental Period</h3>
+        <h3 className="font-semibold mb-2 flex gap-2">
+          <Calendar /> Rental Period
+        </h3>
         <DateRangePicker
           startDate={startDate}
           endDate={endDate}
           onDateRangeChange={(s, e) => {
-            setStartDate(s)
-            setEndDate(e)
+            setStartDate(s);
+            setEndDate(e);
           }}
           bookedDates={bookedDates}
           minStartDate={EARLIEST_START_DATE} // ✅ YEH ZAROORI
         />
 
-
-
-
-        <h3 className="font-semibold mt-4 mb-2 flex gap-2"><MapPin /> Installation</h3>
+        <h3 className="font-semibold mt-4 mb-2 flex gap-2">
+          <MapPin /> Installation
+        </h3>
         <input
           type="date"
           className="border p-2 w-full mb-2"
           min={
             startDate
               ? new Date(
-                startDate.getTime() + INSTALLATION_LEAD_DAYS * 86400000
-              ).toISOString().split("T")[0]
+                  startDate.getTime() + INSTALLATION_LEAD_DAYS * 86400000,
+                )
+                  .toISOString()
+                  .split("T")[0]
               : undefined
           }
           value={installationDate?.toISOString().split("T")[0] || ""}
-          onChange={e => setInstallationDate(new Date(e.target.value))}
+          onChange={(e) => setInstallationDate(new Date(e.target.value))}
         />
-
 
         <select
           className="border p-2 w-full"
           value={county}
-          onChange={e => setCounty(e.target.value)}
+          onChange={(e) => setCounty(e.target.value)}
         >
           <option value="">Select County</option>
-          {ALLOWED_COUNTIES.map(c => (
+          {ALLOWED_COUNTIES.map((c) => (
             <option key={c} value={c}>
               {c}
             </option>
           ))}
         </select>
 
-
-
         <div className="mt-6 border-t pt-4">
-          <p>Total: <b>£{pricing.totalPrice}</b></p>
+          <p>
+            Total: <b>£{pricing.totalPrice}</b>
+          </p>
           <p className="text-sm text-muted-foreground">
             £{pricing.pricePerDay}/day • {rentalMonths} months
           </p>
@@ -580,20 +630,26 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
           </p>
         </div>
 
-
         <div className="mt-4 flex gap-3">
-          <Button disabled={!canAddToCart || isAdded}
-            onClick={handleAddToCart} className="flex-1">
+          <Button
+            disabled={!canAddToCart || isAdded}
+            onClick={handleAddToCart}
+            className="flex-1"
+          >
             {isAdded ? <Check /> : <ShoppingBag />} Add to Basket
           </Button>
           {isAdded && (
             <>
-              <Button variant="outline" onClick={onClose}>Review Basket</Button>
-              <Button variant="ghost" onClick={onClose}>Continue Shopping</Button>
+              <Button variant="outline" onClick={onClose}>
+                Review Basket
+              </Button>
+              <Button variant="ghost" onClick={onClose}>
+                Continue Shopping
+              </Button>
             </>
           )}
         </div>
       </div>
     </div>
-  )
+  );
 }
