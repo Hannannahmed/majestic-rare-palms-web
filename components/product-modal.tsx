@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { X, ShoppingBag, Check, Calendar, MapPin } from "lucide-react";
+import { X, ShoppingBag, Check, Calendar, MapPin, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DateRangePicker } from "@/components/date-range-picker";
 import { useCart } from "@/context/cart-context";
@@ -260,7 +260,7 @@ function getMonthRange(months: number) {
 
 export function ProductModal({ plant, isOpen, onClose }: any) {
   const router = useRouter();
-  const { addToCart } = useCart();
+  const { addToCart, setIsCartOpen, isCartOpen } = useCart();
 
   const [plantDetails, setPlantDetails] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -278,6 +278,7 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
   const [installationDate, setInstallationDate] = useState<Date | null>(null);
   const [postcode, setPostcode] = useState("");
   const [isAdded, setIsAdded] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   // text
   useEffect(() => {
     if (!startDate) {
@@ -460,9 +461,11 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
       ErrorToast("Please complete all required fields");
       return;
     }
+    if (isAddingToCart) return;
 
+    setIsAddingToCart(true);
     try {
-      addToCart({
+      await addToCart({
         plantId: plantDetails.id,
         plantName: plantDetails.name,
         plantImage: plantDetails.images?.[0] || "/placeholder.svg",
@@ -484,8 +487,10 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
     } catch (error: any) {
       ErrorToast(
         error?.response?.data?.message ||
-          "Plant is already booked for the selected dates",
+        "Plant is already booked for the selected dates",
       );
+    } finally {
+      setIsAddingToCart(false);
     }
   };
 
@@ -529,9 +534,8 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
               <button
                 key={String(s)}
                 onClick={() => setSize(s)}
-                className={`border p-3 rounded ${
-                  size === s ? "border-primary ring-2" : ""
-                }`}
+                className={`border p-3 rounded ${size === s ? "border-primary ring-2" : ""
+                  }`}
               >
                 <p className="capitalize">{s}</p>
               </button>
@@ -550,9 +554,8 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
             <button
               key={p}
               onClick={() => setPot(p)}
-              className={`border rounded-lg p-2 flex flex-col items-center justify-center ${
-                pot === p ? "border-primary ring-2" : ""
-              }`}
+              className={`border rounded-lg p-2 flex flex-col items-center justify-center ${pot === p ? "border-primary ring-2" : ""
+                }`}
             >
               <img
                 src={meta.image}
@@ -595,10 +598,10 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
           min={
             startDate
               ? new Date(
-                  startDate.getTime() + INSTALLATION_LEAD_DAYS * 86400000,
-                )
-                  .toISOString()
-                  .split("T")[0]
+                startDate.getTime() + INSTALLATION_LEAD_DAYS * 86400000,
+              )
+                .toISOString()
+                .split("T")[0]
               : undefined
           }
           value={installationDate?.toISOString().split("T")[0] || ""}
@@ -640,15 +643,33 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
 
         <div className="mt-4 flex gap-3">
           <Button
-            disabled={!canAddToCart || isAdded}
+            disabled={!canAddToCart || isAdded || isAddingToCart}
             onClick={handleAddToCart}
             className="flex-1"
           >
-            {isAdded ? <Check /> : <ShoppingBag />} Add to Basket
+            {isAddingToCart ? (
+              <>
+                <Loader2 className="animate-spin" /> Adding...
+              </>
+            ) : isAdded ? (
+              <>
+                <Check /> Added
+              </>
+            ) : (
+              <>
+                <ShoppingBag /> Add to Basket
+              </>
+            )}
           </Button>
           {isAdded && (
             <>
-              <Button variant="outline" onClick={onClose}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsCartOpen(true);
+                  onClose();
+                }}
+              >
                 Review Basket
               </Button>
               <Button variant="ghost" onClick={onClose}>
