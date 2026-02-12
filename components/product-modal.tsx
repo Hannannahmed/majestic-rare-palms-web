@@ -421,7 +421,7 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
     return {
       pricePerDay: result.pricePerDay,
 
-      total: result.total, // ✅ number (for logic/cart)
+      total: result.total, 
       totalFormatted: `£${result.total.toFixed(1)}`, // ✅ string (for UI)
 
       days: result.days,
