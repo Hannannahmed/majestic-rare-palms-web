@@ -332,23 +332,28 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
     if (numPlants >= 10) return 5.2;
     if (numPlants >= 5) return 5.7;
     return 6.2;
+
   }
 
   /* -------- Rental days (NO extra day bug) -------- */
   const rentalDays = useMemo(() => {
-    if (!startDate || !endDate) return 0;
+  if (!startDate || !endDate) return 0;
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+  const start = new Date(startDate);
+  const end = new Date(endDate);
 
-    start.setHours(0, 0, 0, 0);
-    end.setHours(0, 0, 0, 0);
+  start.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
 
-    return Math.round((end.getTime() - start.getTime()) / 86400000) + 1; // ✅ inclusive
-  }, [startDate, endDate]);
+  const diff = (end.getTime() - start.getTime()) / 86400000;
+
+  return diff > 0 ? Math.ceil(diff) : 0;
+}, [startDate, endDate]);
+
 
   const rawMonths = Math.ceil(rentalDays / 30);
-  const rentalMonths = Math.max(1, Math.floor(rentalDays / 30)); // ensures at least 1 month
+  const rentalMonths = Math.max(1, Math.ceil(rentalDays / 30));
+
 
   function getPlantRange(numPlants: number) {
     if (numPlants === 3) return "3";
@@ -382,7 +387,8 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
       };
     }
 
-    const months = Math.max(1, Math.floor(rentalDays / 30));
+    const months = Math.max(1, Math.ceil(rentalDays / 30));
+
     const monthRange = getMonthRange(months);
     const plantRange = getPlantRange(numPlants);
 
@@ -453,8 +459,7 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
     rentalDays >= MIN_RENTAL_DAYS &&
     numPlants >= 3 &&
     startDate &&
-    endDate &&
-    isCountyValid;
+    endDate;
 
   const handleAddToCart = async () => {
     if (!canAddToCart) {
@@ -637,7 +642,7 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
             ))}
           </ul>
           <p className="mt-1">
-            Monthly equivalent: £{pricing.monthlyEquivalent}/month
+            Monthly equivalent: {pricing.monthlyEquivalent}/month
           </p>
         </div>
 

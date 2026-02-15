@@ -390,14 +390,20 @@ export function Navbar() {
                 required
                 className="w-full p-3 border rounded"
               />
-              <input
-                type="text"
-                placeholder="State"
-                value={state}
-                onChange={(e) => setState(e.target.value)}
-                required
-                className="w-full p-3 border rounded"
-              />
+            <select
+  value={state}
+  onChange={(e) => setState(e.target.value)}
+  required
+  className="w-full p-3 border rounded"
+>
+  <option value="">Select County</option>
+  {allowedCounties.map((county) => (
+    <option key={county} value={county}>
+      {county}
+    </option>
+  ))}
+</select>
+
               <input
                 type="text"
                 placeholder="ZIP / Postal Code"
