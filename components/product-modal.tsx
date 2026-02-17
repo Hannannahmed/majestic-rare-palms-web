@@ -337,22 +337,41 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
 
   /* -------- Rental days (NO extra day bug) -------- */
   const rentalDays = useMemo(() => {
-  if (!startDate || !endDate) return 0;
+    if (!startDate || !endDate) return 0;
 
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
 
-  start.setHours(0, 0, 0, 0);
-  end.setHours(0, 0, 0, 0);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
 
-  const diff = (end.getTime() - start.getTime()) / 86400000;
+    const diff = (end.getTime() - start.getTime()) / 86400000;
 
-  return diff > 0 ? Math.ceil(diff) : 0;
-}, [startDate, endDate]);
+    return diff > 0 ? Math.ceil(diff) : 0;
+  }, [startDate, endDate]);
 
 
-  const rawMonths = Math.ceil(rentalDays / 30);
-  const rentalMonths = Math.max(1, Math.ceil(rentalDays / 30));
+  function getCalendarMonths(start: Date, end: Date) {
+    const startYear = start.getFullYear();
+    const startMonth = start.getMonth();
+    const startDay = start.getDate();
+
+    const endYear = end.getFullYear();
+    const endMonth = end.getMonth();
+    const endDay = end.getDate();
+
+    let months = (endYear - startYear) * 12 + (endMonth - startMonth);
+
+    // agar end day start day se kam hai to full month complete nahi hua
+    if (endDay < startDay) {
+      months -= 1;
+    }
+
+    return Math.max(1, months);
+  }
+  const rentalMonths = startDate && endDate
+    ? getCalendarMonths(startDate, endDate)
+    : 0;
 
 
   function getPlantRange(numPlants: number) {
@@ -427,7 +446,7 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
     return {
       pricePerDay: result.pricePerDay,
 
-      total: result.total, 
+      total: result.total,
       totalFormatted: `£${result.total.toFixed(1)}`, // ✅ string (for UI)
 
       days: result.days,
