@@ -258,18 +258,24 @@ function getMonthRange(months: number) {
   return "18-24";
 }
 
-export function ProductModal({ plant, isOpen, onClose }: any) {
+export function ProductModal({
+  plant,
+  isOpen,
+  onClose,
+  existingCartItem,
+}: any) {
   const router = useRouter();
-  const { addToCart, setIsCartOpen, isCartOpen } = useCart();
+  const { addToCart, setIsCartOpen, isCartOpen, updateCartItem } = useCart();
 
   const [plantDetails, setPlantDetails] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [country, setCountry] = useState("");
-  const [bookedDates, setBookedDates] = useState<{ start: Date; end: Date }[]>(
-    [],
-  );
+  const [bookedDates, setBookedDates] = useState<
+    { start: Date; end: Date; quantity: number; stock: number }[]
+  >([]);
 
-  const [size, setSize] = useState<"small" | "medium" | "large">("medium");
+  const [size, setSize] = useState<keyof typeof PRICE_TABLE>("medium");
+
   const [pot, setPot] = useState<"basic" | "ceramic" | "premium">("basic");
   const [numPlants, setNumPlants] = useState(3);
 
@@ -295,6 +301,22 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
   }, [startDate]);
 
   useEffect(() => {
+    if (existingCartItem) {
+      setSize(
+        existingCartItem.size?.name?.toLowerCase() as
+          | "small"
+          | "medium"
+          | "large",
+      );
+
+      setPot(existingCartItem.pot?.id);
+      setNumPlants(existingCartItem.numPlants);
+      setStartDate(new Date(existingCartItem.startDate));
+      setEndDate(new Date(existingCartItem.endDate));
+    }
+  }, [existingCartItem]);
+
+  useEffect(() => {
     if (!isOpen || !plant) return;
 
     setLoading(true);
@@ -304,10 +326,17 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
       setPlantDetails(plant);
 
       // Booked ranges from backend
-      const bookedRanges: { start: Date; end: Date }[] =
+      const bookedRanges: {
+        start: Date;
+        end: Date;
+        quantity: number;
+        stock: number;
+      }[] =
         plant.bookedDateRanges?.map((b: any) => ({
           start: new Date(b.start),
           end: new Date(b.end),
+          quantity: b.quantity,
+          stock: plant.stock, // total stock
         })) || [];
 
       setBookedDates(bookedRanges);
@@ -414,8 +443,19 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
     const monthRange = getMonthRange(months);
     const plantRange = getPlantRange(numPlants);
 
-    const pricePerPlantPerDay = PRICE_TABLE[size][monthRange][plantRange];
+    // const pricePerPlantPerDay = PRICE_TABLE[size][monthRange][plantRange];
 
+    const sizeTable = PRICE_TABLE[size];
+    const monthTable = sizeTable?.[monthRange];
+    const pricePerPlantPerDay = monthTable?.[plantRange];
+
+    if (!pricePerPlantPerDay) {
+      console.error("Pricing lookup failed:", {
+        size,
+        monthRange,
+        plantRange,
+      });
+    }
     const dailyTotal = pricePerPlantPerDay * numPlants;
     const subTotal = dailyTotal * rentalDays;
 
@@ -489,7 +529,7 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
 
     setIsAddingToCart(true);
     try {
-      await addToCart({
+      const newItem = {
         plantId: plantDetails.id,
         plantName: plantDetails.name,
         plantImage: plantDetails.images?.[0] || "/placeholder.svg",
@@ -505,8 +545,12 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
         country,
         size: SIZE_META[size],
         pot: POT_META[pot],
-      });
-
+      };
+      if (existingCartItem) {
+        await updateCartItem(existingCartItem.plantId, newItem);
+      } else {
+        await addToCart(newItem);
+      }
       setIsAdded(true);
     } catch (error: any) {
       ErrorToast(

@@ -28,6 +28,7 @@ export interface CartItem {
     id: string;
     name: string;
     color: string;
+    image?: string;
   } | null;
 }
 
@@ -35,6 +36,7 @@ interface CartContextType {
   cartItems: CartItem[];
   addToCart: (item: CartItem) => Promise<void>;
   removeFromCart: (plantId: string) => Promise<void>;
+  updateCartItem: (plantId: string, updatedItem: CartItem) => Promise<void>;
   getCartCount: () => number;
   clearCart: () => void;
   getBookedDatesForPlant: (plantId: string) => { start: Date; end: Date }[];
@@ -57,6 +59,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         plantId: item.plantId,
         startDate: item.startDate,
         endDate: item.endDate,
+        quantity: item.numPlants,
       });
       // You could also call /api/cart/add if you have that
     } catch (err) {
@@ -98,6 +101,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const fromExisting = existingBookings[plantId] || [];
     return [...fromExisting, ...fromCart];
   };
+  const updateCartItem = async (plantId: string, updatedItem: CartItem) => {
+    try {
+      await axiosInterceptor.post("/cart/validate", {
+        plantId: updatedItem.plantId,
+        startDate: updatedItem.startDate,
+        endDate: updatedItem.endDate,
+      });
+    } catch (err) {
+      ErrorToast("Updated dates are not available.");
+      return;
+    }
+
+    setCartItems((prev) =>
+      prev.map((item) => (item.plantId === plantId ? updatedItem : item)),
+    );
+  };
 
   return (
     <CartContext.Provider
@@ -110,7 +129,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         getBookedDatesForPlant,
         getCartTotal,
         isCartOpen,
-        setIsCartOpen
+        setIsCartOpen,
+        updateCartItem,
       }}
     >
       {children}

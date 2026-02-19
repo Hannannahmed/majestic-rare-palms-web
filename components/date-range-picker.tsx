@@ -1,21 +1,19 @@
-"use client"
+"use client";
 
-import { useState, useRef, useEffect } from "react"
-import { ChevronLeft, ChevronRight, Calendar } from "lucide-react"
+import { useState, useRef, useEffect } from "react";
+import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { ErrorToast } from "./global/ToastContainer";
 import { Button } from "./ui/button";
 
 interface DateRangePickerProps {
-  bookedDates: { start: Date; end: Date }[]
-  onDateRangeChange: (startDate: Date | null, endDate: Date | null) => void
-  startDate: Date | null
-  endDate: Date | null
-  minStartDate?: Date  
-
+  bookedDates: { start: Date; end: Date; quantity: number; stock: number }[];
+  onDateRangeChange: (startDate: Date | null, endDate: Date | null) => void;
+  startDate: Date | null;
+  endDate: Date | null;
+  minStartDate?: Date;
 }
-const INSTALLATION_LEAD_DAYS = 14        // changeable later
-const MAX_BOOKING_MONTHS_AHEAD = 36      // business decision
-
+const INSTALLATION_LEAD_DAYS = 14; // changeable later
+const MAX_BOOKING_MONTHS_AHEAD = 36; // business decision
 
 export function DateRangePicker({
   bookedDates,
@@ -24,145 +22,164 @@ export function DateRangePicker({
   endDate,
   minStartDate, // ✅ ADD THIS
 }: DateRangePickerProps) {
- 
-  const [currentMonth, setCurrentMonth] = useState(new Date())
-  const [selectingEnd, setSelectingEnd] = useState(false)
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectingEnd, setSelectingEnd] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsCalendarOpen(false)
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setIsCalendarOpen(false);
       }
-    }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const getDaysInMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
-  }
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  };
 
   const getFirstDayOfMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth(), 1).getDay()
-  }
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  };
 
   const isDateBooked = (date: Date) => {
-    return bookedDates.some(({ start, end }) => {
-      const checkDate = new Date(date)
-      checkDate.setHours(0, 0, 0, 0)
-      const startDate = new Date(start)
-      startDate.setHours(0, 0, 0, 0)
-      const endDate = new Date(end)
-      endDate.setHours(0, 0, 0, 0)
-      return checkDate >= startDate && checkDate <= endDate
-    })
-  }
-const isDateDisabled = (date: Date) => {
-  const checkDate = new Date(date)
-  checkDate.setHours(0, 0, 0, 0)
+    if (!bookedDates || bookedDates.length === 0) return false; // ← ADD THIS
 
-  const minSelectableDate = minStartDate
-    ? new Date(minStartDate)
-    : new Date(today)
+    const checkDate = new Date(date);
+    checkDate.setHours(0, 0, 0, 0);
 
-  const maxSelectableDate = new Date(today)
-  maxSelectableDate.setMonth(maxSelectableDate.getMonth() + MAX_BOOKING_MONTHS_AHEAD)
+    let totalBooked = 0;
+    bookedDates.forEach(({ start, end, quantity }) => {
+      const s = new Date(start);
+      s.setHours(0, 0, 0, 0);
+      const e = new Date(end);
+      e.setHours(0, 0, 0, 0);
 
-  return (
-    checkDate < minSelectableDate ||
-    checkDate > maxSelectableDate ||
-    isDateBooked(checkDate)
-  )
-}
+      if (checkDate >= s && checkDate <= e) {
+        totalBooked += quantity;
+      }
+    });
 
+    const stock = bookedDates[0]?.stock || 0;
+    return totalBooked >= stock;
+  };
+
+  const isDateDisabled = (date: Date) => {
+    const checkDate = new Date(date);
+    checkDate.setHours(0, 0, 0, 0);
+
+    const minSelectableDate = minStartDate ? new Date(minStartDate) : today;
+    const maxSelectableDate = new Date(today);
+    maxSelectableDate.setMonth(
+      maxSelectableDate.getMonth() + MAX_BOOKING_MONTHS_AHEAD,
+    );
+
+    // disabled if outside min/max or booked
+    return (
+      checkDate < minSelectableDate ||
+      checkDate > maxSelectableDate ||
+      isDateBooked(checkDate)
+    );
+  };
 
   const isDateInRange = (date: Date) => {
-    if (!startDate || !endDate) return false
-    const checkDate = new Date(date)
-    checkDate.setHours(0, 0, 0, 0)
-    return checkDate > startDate && checkDate < endDate
-  }
+    if (!startDate || !endDate) return false;
+    const checkDate = new Date(date);
+    checkDate.setHours(0, 0, 0, 0);
+    return checkDate > startDate && checkDate < endDate;
+  };
 
   const isStartDate = (date: Date) => {
-    if (!startDate) return false
-    const checkDate = new Date(date)
-    checkDate.setHours(0, 0, 0, 0)
-    const start = new Date(startDate)
-    start.setHours(0, 0, 0, 0)
-    return checkDate.getTime() === start.getTime()
-  }
+    if (!startDate) return false;
+    const checkDate = new Date(date);
+    checkDate.setHours(0, 0, 0, 0);
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    return checkDate.getTime() === start.getTime();
+  };
 
   const isEndDate = (date: Date) => {
-    if (!endDate) return false
-    const checkDate = new Date(date)
-    checkDate.setHours(0, 0, 0, 0)
-    const end = new Date(endDate)
-    end.setHours(0, 0, 0, 0)
-    return checkDate.getTime() === end.getTime()
-  }
+    if (!endDate) return false;
+    const checkDate = new Date(date);
+    checkDate.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(0, 0, 0, 0);
+    return checkDate.getTime() === end.getTime();
+  };
 
   const hasBookedDateInRange = (start: Date, end: Date) => {
-    const current = new Date(start)
+    const current = new Date(start);
     while (current <= end) {
-      if (isDateBooked(current)) return true
-      current.setDate(current.getDate() + 1)
+      if (isDateBooked(current)) return true;
+      current.setDate(current.getDate() + 1);
     }
-    return false
-  }
+    return false;
+  };
+
   // const canAddToCart = startDate && endDate && rentalDays >= 30
 
   const handleDateClick = (date: Date) => {
-    if (isDateDisabled(date)) return
+    if (isDateDisabled(date)) return;
 
     // START DATE selection
     if (!startDate || endDate || date < startDate) {
-      onDateRangeChange(date, null)
-      setSelectingEnd(true)
-      return
+      onDateRangeChange(date, null);
+      setSelectingEnd(true);
+      return;
     }
 
     // END DATE selection
-    const minEndDate = new Date(startDate)
-    minEndDate.setDate(minEndDate.getDate() + 30)
+    const minEndDate = new Date(startDate);
+    minEndDate.setDate(minEndDate.getDate() + 30);
 
     if (date < minEndDate) {
-      ErrorToast("Minimum rental term is 1 month")
-      return
+      ErrorToast("Minimum rental term is 1 month");
+      return;
     }
 
     if (hasBookedDateInRange(startDate, date)) {
-      ErrorToast("Selected range overlaps with booked dates")
-      return
+      ErrorToast("Selected range overlaps with booked dates");
+      return;
     }
 
-    onDateRangeChange(startDate, date)
-    setSelectingEnd(false)
-  }
-
+    onDateRangeChange(startDate, date);
+    setSelectingEnd(false);
+  };
 
   const canGoNextMonth = () => {
-    const max = new Date(today)
-    max.setMonth(max.getMonth() + MAX_BOOKING_MONTHS_AHEAD)
-    return currentMonth < max
-  }
-
+    const max = new Date(today);
+    max.setMonth(max.getMonth() + MAX_BOOKING_MONTHS_AHEAD);
+    return currentMonth < max;
+  };
 
   const prevMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))
-  }
+    setCurrentMonth(
+      new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1),
+    );
+  };
 
   const nextMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))
-  }
+    setCurrentMonth(
+      new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1),
+    );
+  };
 
   const formatDateShort = (date: Date) => {
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-  }
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
 
   const monthNames = [
     "January",
@@ -177,25 +194,29 @@ const isDateDisabled = (date: Date) => {
     "October",
     "November",
     "December",
-  ]
+  ];
 
-  const dayNames = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
+  const dayNames = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
-  const daysInMonth = getDaysInMonth(currentMonth)
-  const firstDayOfMonth = getFirstDayOfMonth(currentMonth)
+  const daysInMonth = getDaysInMonth(currentMonth);
+  const firstDayOfMonth = getFirstDayOfMonth(currentMonth);
 
-  const days = []
+  const days = [];
   for (let i = 0; i < firstDayOfMonth; i++) {
-    days.push(<div key={`empty-${i}`} className="h-10" />)
+    days.push(<div key={`empty-${i}`} className="h-10" />);
   }
 
   for (let day = 1; day <= daysInMonth; day++) {
-    const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
-    const disabled = isDateDisabled(date)
-    const booked = isDateBooked(date)
-    const inRange = isDateInRange(date)
-    const isStart = isStartDate(date)
-    const isEnd = isEndDate(date)
+    const date = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth(),
+      day,
+    );
+    const disabled = isDateDisabled(date);
+    const booked = isDateBooked(date);
+    const inRange = isDateInRange(date);
+    const isStart = isStartDate(date);
+    const isEnd = isEndDate(date);
 
     days.push(
       <button
@@ -213,37 +234,41 @@ const isDateDisabled = (date: Date) => {
       >
         {day}
       </button>,
-    )
+    );
   }
 
   const isPrevDisabled =
-    currentMonth.getFullYear() === today.getFullYear() && currentMonth.getMonth() === today.getMonth()
+    currentMonth.getFullYear() === today.getFullYear() &&
+    currentMonth.getMonth() === today.getMonth();
 
   return (
     <div ref={containerRef} className="relative">
       <div className="flex gap-2 mb-2">
-        {[3, 6, 12, 24].map(months => (
+        {[3, 6, 12, 24].map((months) => (
           <Button
             key={months}
             size="sm"
             onClick={() => {
-              if (!startDate) return
-              const end = new Date(startDate)
-              end.setMonth(end.getMonth() + months)
+              if (!startDate) return;
+              const end = new Date(startDate);
+              end.setMonth(end.getMonth() + months);
 
-              const diff = Math.ceil((end.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+              const diff =
+                Math.ceil(
+                  (end.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+                ) + 1;
               if (diff < 30) {
-                ErrorToast("Minimum rental term is 1 month")
-                return
+                ErrorToast("Minimum rental term is 1 month");
+                return;
               }
 
               // Booked date check
               if (hasBookedDateInRange(startDate, end)) {
-                ErrorToast("Selected range overlaps with booked dates")
-                return
+                ErrorToast("Selected range overlaps with booked dates");
+                return;
               }
 
-              onDateRangeChange(startDate, end)
+              onDateRangeChange(startDate, end);
             }}
           >
             {months} months
@@ -253,7 +278,6 @@ const isDateDisabled = (date: Date) => {
       <div className="mb-2 text-xs text-muted-foreground">
         Price per plant decreases with longer rental terms and more plants.
       </div>
-
 
       <div
         onClick={() => setIsCalendarOpen(!isCalendarOpen)}
@@ -266,7 +290,8 @@ const isDateDisabled = (date: Date) => {
             </span>
           ) : startDate ? (
             <span className="text-card-foreground font-medium">
-              {formatDateShort(startDate)} — <span className="text-muted-foreground">Select end date</span>
+              {formatDateShort(startDate)} —{" "}
+              <span className="text-muted-foreground">Select end date</span>
             </span>
           ) : (
             <span className="text-muted-foreground">Select rental dates</span>
@@ -297,12 +322,14 @@ const isDateDisabled = (date: Date) => {
             >
               <ChevronRight className="h-5 w-5" />
             </button>
-
           </div>
 
           <div className="grid grid-cols-7 gap-1 mb-2">
             {dayNames.map((day) => (
-              <div key={day} className="h-8 flex items-center justify-center text-xs font-medium text-muted-foreground">
+              <div
+                key={day}
+                className="h-8 flex items-center justify-center text-xs font-medium text-muted-foreground"
+              >
                 {day}
               </div>
             ))}
@@ -323,5 +350,5 @@ const isDateDisabled = (date: Date) => {
         </div>
       )}
     </div>
-  )
+  );
 }
