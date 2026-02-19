@@ -236,6 +236,7 @@ export function Navbar() {
                             key={item.plantId}
                             className="flex gap-4 p-3 bg-muted rounded-lg"
                           >
+                            
                             <img
                               src={item.plantImage || "/placeholder.svg"}
                               alt={item.plantName}
@@ -246,9 +247,13 @@ export function Navbar() {
                                 {item.plantName}
                               </h4>
                               <p className="text-xs text-muted-foreground">
-                                {/* {item.size.name} ({item.size.height}) */}
+                                {item.size?.name} ({item.size?.height})
                               </p>
-                              {/* <p className="text-xs text-muted-foreground">Pot: {item.pot.name}</p> */}
+
+                              <p className="text-xs text-muted-foreground">
+                                Pot: {item.pot?.name}
+                              </p>
+
                               <p className="text-sm text-muted-foreground">
                                 {formatDateRange(item.startDate, item.endDate)}{" "}
                                 ({item.rentalDays} days)
@@ -390,19 +395,19 @@ export function Navbar() {
                 required
                 className="w-full p-3 border rounded"
               />
-            <select
-  value={state}
-  onChange={(e) => setState(e.target.value)}
-  required
-  className="w-full p-3 border rounded"
->
-  <option value="">Select County</option>
-  {allowedCounties.map((county) => (
-    <option key={county} value={county}>
-      {county}
-    </option>
-  ))}
-</select>
+              <select
+                value={state}
+                onChange={(e) => setState(e.target.value)}
+                required
+                className="w-full p-3 border rounded"
+              >
+                <option value="">Select County</option>
+                {allowedCounties.map((county) => (
+                  <option key={county} value={county}>
+                    {county}
+                  </option>
+                ))}
+              </select>
 
               <input
                 type="text"
