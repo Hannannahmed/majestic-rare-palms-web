@@ -327,29 +327,34 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
     d.setDate(d.getDate() + INSTALLATION_LEAD_DAYS);
     return d;
   }, []);
+
   function getBasePricePerDay(numPlants: number) {
     if (numPlants >= 15) return 4.7;
     if (numPlants >= 10) return 5.2;
     if (numPlants >= 5) return 5.7;
     return 6.2;
-
   }
 
   /* -------- Rental days (NO extra day bug) -------- */
   const rentalDays = useMemo(() => {
     if (!startDate || !endDate) return 0;
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    const utcStart = Date.UTC(
+      startDate.getFullYear(),
+      startDate.getMonth(),
+      startDate.getDate(),
+    );
 
-    start.setHours(0, 0, 0, 0);
-    end.setHours(0, 0, 0, 0);
+    const utcEnd = Date.UTC(
+      endDate.getFullYear(),
+      endDate.getMonth(),
+      endDate.getDate(),
+    );
 
-    const diff = (end.getTime() - start.getTime()) / 86400000;
+    const diffDays = (utcEnd - utcStart) / (1000 * 60 * 60 * 24);
 
-    return diff > 0 ? Math.ceil(diff) : 0;
+    return diffDays;
   }, [startDate, endDate]);
-
 
   function getCalendarMonths(start: Date, end: Date) {
     const startYear = start.getFullYear();
@@ -369,10 +374,8 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
 
     return Math.max(1, months);
   }
-  const rentalMonths = startDate && endDate
-    ? getCalendarMonths(startDate, endDate)
-    : 0;
-
+  const rentalMonths =
+    startDate && endDate ? getCalendarMonths(startDate, endDate) : 0;
 
   function getPlantRange(numPlants: number) {
     if (numPlants === 3) return "3";
@@ -475,10 +478,7 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
   const isCountyValid = ALLOWED_COUNTIES.includes(county);
 
   const canAddToCart =
-    rentalDays >= MIN_RENTAL_DAYS &&
-    numPlants >= 3 &&
-    startDate &&
-    endDate;
+    rentalDays >= MIN_RENTAL_DAYS && numPlants >= 3 && startDate && endDate;
 
   const handleAddToCart = async () => {
     if (!canAddToCart) {
@@ -511,7 +511,7 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
     } catch (error: any) {
       ErrorToast(
         error?.response?.data?.message ||
-        "Plant is already booked for the selected dates",
+          "Plant is already booked for the selected dates",
       );
     } finally {
       setIsAddingToCart(false);
@@ -558,8 +558,9 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
               <button
                 key={String(s)}
                 onClick={() => setSize(s)}
-                className={`border p-3 rounded ${size === s ? "border-primary ring-2" : ""
-                  }`}
+                className={`border p-3 rounded ${
+                  size === s ? "border-primary ring-2" : ""
+                }`}
               >
                 <p className="capitalize">{s}</p>
               </button>
@@ -578,8 +579,9 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
             <button
               key={p}
               onClick={() => setPot(p)}
-              className={`border rounded-lg p-2 flex flex-col items-center justify-center ${pot === p ? "border-primary ring-2" : ""
-                }`}
+              className={`border rounded-lg p-2 flex flex-col items-center justify-center ${
+                pot === p ? "border-primary ring-2" : ""
+              }`}
             >
               <img
                 src={meta.image}
@@ -622,10 +624,10 @@ export function ProductModal({ plant, isOpen, onClose }: any) {
           min={
             startDate
               ? new Date(
-                startDate.getTime() + INSTALLATION_LEAD_DAYS * 86400000,
-              )
-                .toISOString()
-                .split("T")[0]
+                  startDate.getTime() + INSTALLATION_LEAD_DAYS * 86400000,
+                )
+                  .toISOString()
+                  .split("T")[0]
               : undefined
           }
           value={installationDate?.toISOString().split("T")[0] || ""}
