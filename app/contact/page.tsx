@@ -138,13 +138,10 @@ export default function ContactPage() {
                   <div>
                     <h3 className="font-semibold text-foreground">Address</h3>
                     <p className="text-muted-foreground">
-                      123 Green Lane
-                      <br />
-                      London, UK
-                      <br />
-                      EC1A 1BB
+                      This is an online-based enterprise with no physical storefront. We operate entirely through digital platforms.
                     </p>
                   </div>
+
                 </div>
 
                 <div className="flex items-start gap-4">
@@ -153,7 +150,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground">Phone</h3>
-                    <p className="text-muted-foreground">+44 (0) 20 1234 5678</p>
+                    <p className="text-muted-foreground">+44(0)7944871124</p>
                   </div>
                 </div>
 
@@ -163,7 +160,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground">Email</h3>
-                    <p className="text-muted-foreground">hello@bloomandrent.com</p>
+                    <p className="text-muted-foreground">admin@majesticrarepalms.co.uk</p>
                   </div>
                 </div>
 
