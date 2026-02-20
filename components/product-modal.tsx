@@ -10,7 +10,7 @@ import { ErrorToast } from "./global/ToastContainer";
 import { useRouter } from "next/navigation";
 
 const MIN_RENTAL_DAYS = 30;
-const INSTALLATION_LEAD_DAYS = 14;
+const INSTALLATION_LEAD_DAYS = 1;
 const ALLOWED_COUNTIES = [
   "Kent",
   "Essex",
@@ -273,7 +273,7 @@ export function ProductModal({
   const [bookedDates, setBookedDates] = useState<
     { start: Date; end: Date; quantity: number; stock: number }[]
   >([]);
-
+  console.log(bookedDates, "book-dates");
   const [size, setSize] = useState<keyof typeof PRICE_TABLE>("medium");
 
   const [pot, setPot] = useState<"basic" | "ceramic" | "premium">("basic");
@@ -315,31 +315,43 @@ export function ProductModal({
       setEndDate(new Date(existingCartItem.endDate));
     }
   }, [existingCartItem]);
-
+  const [error, SetError] = useState("");
+  const [totalStock, setTotalStock] = useState(0);
   useEffect(() => {
     if (!isOpen || !plant) return;
 
     setLoading(true);
 
     axiosInterceptor.get(`/plants/${plant.id}`).then((res) => {
-      const plant = res.data.data.plant;
-      setPlantDetails(plant);
+      const plantData = res.data.data.plant;
+      setPlantDetails(plantData);
 
-      // Booked ranges from backend
-      const bookedRanges: {
-        start: Date;
-        end: Date;
-        quantity: number;
-        stock: number;
-      }[] =
-        plant.bookedDateRanges?.map((b: any) => ({
+      const bookedRanges =
+        plantData.bookedDateRanges?.map((b: any) => ({
           start: new Date(b.start),
           end: new Date(b.end),
           quantity: b.quantity,
-          stock: plant.stock, // total stock
         })) || [];
 
       setBookedDates(bookedRanges);
+
+      // ✅ TOTAL BOOKED STOCK CALCULATE
+      const totalBooked = bookedRanges.reduce(
+        (sum: number, booking: any) => sum + booking.quantity,
+        0,
+      );
+
+      setTotalStock(totalBooked);
+
+      console.log("Total Booked:", totalBooked);
+
+      // ✅ CHECK IF OVERBOOKED
+      if (totalBooked > plantData.stock) {
+        SetError("Booked quantity exceeds available stock!");
+      } else {
+        SetError("");
+      }
+
       setLoading(false);
     });
   }, [isOpen, plant]);
@@ -349,7 +361,7 @@ export function ProductModal({
       setIsAdded(false);
     }
   }, [isOpen]);
-
+  console.log(totalStock, "total stock");
   // ✅ EARLIEST selectable rental start date
   const EARLIEST_START_DATE = useMemo(() => {
     const d = new Date();
@@ -650,6 +662,7 @@ export function ProductModal({
         </h3>
         <DateRangePicker
           startDate={startDate}
+          stock={plantDetails?.stock || 0} // ✅ pass stock to disable fully booked days
           endDate={endDate}
           onDateRangeChange={(s, e) => {
             setStartDate(s);
@@ -658,7 +671,7 @@ export function ProductModal({
           bookedDates={bookedDates}
           minStartDate={EARLIEST_START_DATE} // ✅ YEH ZAROORI
         />
-
+        {error && <p className="text-red-500 mt-2">{error}</p>}
         <h3 className="font-semibold mt-4 mb-2 flex gap-2">
           <MapPin /> Installation
         </h3>
