@@ -10,7 +10,7 @@ import { ErrorToast } from "./global/ToastContainer";
 import { useRouter } from "next/navigation";
 
 const MIN_RENTAL_DAYS = 30;
-const INSTALLATION_LEAD_DAYS = 1;
+// const INSTALLATION_LEAD_DAYS = 1;
 const ALLOWED_COUNTIES = [
   "Kent",
   "Essex",
@@ -235,7 +235,7 @@ function getLockedClientPrice(
   numPlants: number,
   months: number,
 ) {
-  // ✅ 7 plants, 3-month slab (2–3 months allow)
+  // âœ… 7 plants, 3-month slab (2â€“3 months allow)
   if (numPlants === 7 && months >= 2 && months <= 3) {
     if (size === "small") return 2.78;
     if (size === "medium") return 4.0;
@@ -253,8 +253,8 @@ function getMonthRange(months: number) {
   if (months <= 1) return "1";
   if (months <= 3) return "1-3";
   if (months <= 6) return "3-6";
-  if (months <= 12) return "6-12"; // ✅ 12 stays here
-  if (months > 12 && months <= 18) return "12-18"; // ✅ only >12
+  if (months <= 12) return "6-12"; // âœ… 12 stays here
+  if (months > 12 && months <= 18) return "12-18"; // âœ… only >12
   return "18-24";
 }
 
@@ -281,24 +281,24 @@ export function ProductModal({
 
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
-  const [installationDate, setInstallationDate] = useState<Date | null>(null);
+  // const [installationDate, setInstallationDate] = useState<Date | null>(null);
   const [postcode, setPostcode] = useState("");
   const [isAdded, setIsAdded] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   // text
-  useEffect(() => {
-    if (!startDate) {
-      setInstallationDate(null);
-      return;
-    }
+  // useEffect(() => {
+  //   if (!startDate) {
+  //     setInstallationDate(null);
+  //     return;
+  //   }
 
-    const minInstallDate = new Date(startDate);
-    minInstallDate.setDate(minInstallDate.getDate() + INSTALLATION_LEAD_DAYS);
+  //   const minInstallDate = new Date(startDate);
+  //   minInstallDate.setDate(minInstallDate.getDate() + INSTALLATION_LEAD_DAYS);
 
-    if (!installationDate || installationDate < minInstallDate) {
-      setInstallationDate(minInstallDate);
-    }
-  }, [startDate]);
+  //   if (!installationDate || installationDate < minInstallDate) {
+  //     setInstallationDate(minInstallDate);
+  //   }
+  // }, [startDate]);
 
   useEffect(() => {
     if (existingCartItem) {
@@ -335,7 +335,7 @@ export function ProductModal({
 
       setBookedDates(bookedRanges);
 
-      // ✅ TOTAL BOOKED STOCK CALCULATE
+      // âœ… TOTAL BOOKED STOCK CALCULATE
       const totalBooked = bookedRanges.reduce(
         (sum: number, booking: any) => sum + booking.quantity,
         0,
@@ -345,7 +345,7 @@ export function ProductModal({
 
       console.log("Total Booked:", totalBooked);
 
-      // ✅ CHECK IF OVERBOOKED
+      // âœ… CHECK IF OVERBOOKED
       if (totalBooked > plantData.stock) {
         SetError("Booked quantity exceeds available stock!");
       } else {
@@ -362,12 +362,12 @@ export function ProductModal({
     }
   }, [isOpen]);
   console.log(totalStock, "total stock");
-  // ✅ EARLIEST selectable rental start date
-  const EARLIEST_START_DATE = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + INSTALLATION_LEAD_DAYS);
-    return d;
-  }, []);
+  // âœ… EARLIEST selectable rental start date
+  // const EARLIEST_START_DATE = useMemo(() => {
+  //   const d = new Date();
+  //   d.setDate(d.getDate() + INSTALLATION_LEAD_DAYS);
+  //   return d;
+  // }, []);
 
   function getBasePricePerDay(numPlants: number) {
     if (numPlants >= 15) return 4.7;
@@ -502,7 +502,7 @@ export function ProductModal({
       pricePerDay: result.pricePerDay,
 
       total: result.total,
-      totalFormatted: `£${result.total.toFixed(1)}`, // ✅ string (for UI)
+      totalFormatted: `Â£${result.total.toFixed(1)}`, // âœ… string (for UI)
 
       days: result.days,
       months: result.months,
@@ -512,17 +512,17 @@ export function ProductModal({
         `Size: ${size}`,
         `Plants: ${result.plantRange}`,
         `Rental Period: ${result.monthRange} months`,
-        `Size uplift (${size}): ×${result.sizeMultiplier.toFixed(2)}`,
-        `Volume discount for ${numPlants} plants: ×${result.volumeMultiplier.toFixed(2)}`,
-        `Rental term discount (${result.months} months): ×${result.rentalMultiplier.toFixed(2)}`,
-        `£${result.pricePerDay} per plant / day`,
+        `Size uplift (${size}): Ã—${result.sizeMultiplier.toFixed(2)}`,
+        `Volume discount for ${numPlants} plants: Ã—${result.volumeMultiplier.toFixed(2)}`,
+        `Rental term discount (${result.months} months): Ã—${result.rentalMultiplier.toFixed(2)}`,
+        `Â£${result.pricePerDay} per plant / day`,
         `Total days: ${result.days}`,
       ],
 
       monthlyEquivalent:
         result.months > 0
-          ? `£${(result.total / result.months).toFixed(2)}`
-          : "£0",
+          ? `Â£${(result.total / result.months).toFixed(2)}`
+          : "Â£0",
     };
   }, [size, numPlants, rentalDays]);
 
@@ -551,7 +551,7 @@ export function ProductModal({
         rentalDays,
 
         pricePerDay: pricing.pricePerDay,
-        totalPrice: pricing.total, // ✅ NUMBER
+        totalPrice: pricing.total, // âœ… NUMBER
 
         numPlants,
         country,
@@ -578,7 +578,7 @@ export function ProductModal({
   if (loading)
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-        Loading…
+        Loadingâ€¦
       </div>
     );
 
@@ -662,17 +662,15 @@ export function ProductModal({
         </h3>
         <DateRangePicker
           startDate={startDate}
-          stock={plantDetails?.stock || 0} // ✅ pass stock to disable fully booked days
           endDate={endDate}
           onDateRangeChange={(s, e) => {
             setStartDate(s);
             setEndDate(e);
           }}
           bookedDates={bookedDates}
-          minStartDate={EARLIEST_START_DATE} // ✅ YEH ZAROORI
         />
         {error && <p className="text-red-500 mt-2">{error}</p>}
-        <h3 className="font-semibold mt-4 mb-2 flex gap-2">
+        {/* <h3 className="font-semibold mt-4 mb-2 flex gap-2">
           <MapPin /> Installation
         </h3>
         <input
@@ -689,10 +687,10 @@ export function ProductModal({
           }
           value={installationDate?.toISOString().split("T")[0] || ""}
           onChange={(e) => setInstallationDate(new Date(e.target.value))}
-        />
+        /> */}
 
         <select
-          className="border p-2 w-full"
+          className="border p-2 w-full mt-4"
           value={county}
           onChange={(e) => setCounty(e.target.value)}
         >
@@ -706,10 +704,10 @@ export function ProductModal({
 
         <div className="mt-6 border-t pt-4">
           <p>
-            Total: <b>£{pricing.total}</b>
+            Total: <b>Â£{pricing.total}</b>
           </p>
           <p className="text-sm text-muted-foreground">
-            £{pricing.pricePerDay}/day • {rentalMonths} months
+            Â£{pricing.pricePerDay}/day â€¢ {rentalMonths} months
           </p>
         </div>
         <div className="mt-2 mb-4 text-sm text-muted-foreground">
@@ -765,3 +763,4 @@ export function ProductModal({
     </div>
   );
 }
+ 
