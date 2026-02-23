@@ -10,7 +10,7 @@ import { ErrorToast } from "./global/ToastContainer";
 import { useRouter } from "next/navigation";
 
 const MIN_RENTAL_DAYS = 30;
-const INSTALLATION_LEAD_DAYS = 1;
+// const INSTALLATION_LEAD_DAYS = 1;
 const ALLOWED_COUNTIES = [
   "Kent",
   "Essex",
@@ -281,24 +281,24 @@ export function ProductModal({
 
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
-  const [installationDate, setInstallationDate] = useState<Date | null>(null);
+  // const [installationDate, setInstallationDate] = useState<Date | null>(null);
   const [postcode, setPostcode] = useState("");
   const [isAdded, setIsAdded] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   // text
-  useEffect(() => {
-    if (!startDate) {
-      setInstallationDate(null);
-      return;
-    }
+  // useEffect(() => {
+  //   if (!startDate) {
+  //     setInstallationDate(null);
+  //     return;
+  //   }
 
-    const minInstallDate = new Date(startDate);
-    minInstallDate.setDate(minInstallDate.getDate() + INSTALLATION_LEAD_DAYS);
+  //   const minInstallDate = new Date(startDate);
+  //   minInstallDate.setDate(minInstallDate.getDate() + INSTALLATION_LEAD_DAYS);
 
-    if (!installationDate || installationDate < minInstallDate) {
-      setInstallationDate(minInstallDate);
-    }
-  }, [startDate]);
+  //   if (!installationDate || installationDate < minInstallDate) {
+  //     setInstallationDate(minInstallDate);
+  //   }
+  // }, [startDate]);
 
   useEffect(() => {
     if (existingCartItem) {
@@ -363,11 +363,11 @@ export function ProductModal({
   }, [isOpen]);
   console.log(totalStock, "total stock");
   // ✅ EARLIEST selectable rental start date
-  const EARLIEST_START_DATE = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + INSTALLATION_LEAD_DAYS);
-    return d;
-  }, []);
+  // const EARLIEST_START_DATE = useMemo(() => {
+  //   const d = new Date();
+  //   d.setDate(d.getDate() + INSTALLATION_LEAD_DAYS);
+  //   return d;
+  // }, []);
 
   function getBasePricePerDay(numPlants: number) {
     if (numPlants >= 15) return 4.7;
@@ -662,17 +662,15 @@ export function ProductModal({
         </h3>
         <DateRangePicker
           startDate={startDate}
-          stock={plantDetails?.stock || 0} // ✅ pass stock to disable fully booked days
           endDate={endDate}
           onDateRangeChange={(s, e) => {
             setStartDate(s);
             setEndDate(e);
           }}
           bookedDates={bookedDates}
-          minStartDate={EARLIEST_START_DATE} // ✅ YEH ZAROORI
         />
         {error && <p className="text-red-500 mt-2">{error}</p>}
-        <h3 className="font-semibold mt-4 mb-2 flex gap-2">
+        {/* <h3 className="font-semibold mt-4 mb-2 flex gap-2">
           <MapPin /> Installation
         </h3>
         <input
@@ -689,10 +687,10 @@ export function ProductModal({
           }
           value={installationDate?.toISOString().split("T")[0] || ""}
           onChange={(e) => setInstallationDate(new Date(e.target.value))}
-        />
+        /> */}
 
         <select
-          className="border p-2 w-full"
+          className="border p-2 w-full mt-4"
           value={county}
           onChange={(e) => setCounty(e.target.value)}
         >
