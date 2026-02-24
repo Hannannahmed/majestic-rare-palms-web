@@ -235,7 +235,7 @@ function getLockedClientPrice(
   numPlants: number,
   months: number,
 ) {
-  // âœ… 7 plants, 3-month slab (2â€“3 months allow)
+  // ✅ 7 plants, 3-month slab (2–3 months allow)
   if (numPlants === 7 && months >= 2 && months <= 3) {
     if (size === "small") return 2.78;
     if (size === "medium") return 4.0;
@@ -253,8 +253,8 @@ function getMonthRange(months: number) {
   if (months <= 1) return "1";
   if (months <= 3) return "1-3";
   if (months <= 6) return "3-6";
-  if (months <= 12) return "6-12"; // âœ… 12 stays here
-  if (months > 12 && months <= 18) return "12-18"; // âœ… only >12
+  if (months <= 12) return "6-12"; // ✅ 12 stays here
+  if (months > 12 && months <= 18) return "12-18"; // ✅ only >12
   return "18-24";
 }
 
@@ -335,7 +335,7 @@ export function ProductModal({
 
       setBookedDates(bookedRanges);
 
-      // âœ… TOTAL BOOKED STOCK CALCULATE
+      // ✅ TOTAL BOOKED STOCK CALCULATE
       const totalBooked = bookedRanges.reduce(
         (sum: number, booking: any) => sum + booking.quantity,
         0,
@@ -345,7 +345,7 @@ export function ProductModal({
 
       console.log("Total Booked:", totalBooked);
 
-      // âœ… CHECK IF OVERBOOKED
+      // ✅ CHECK IF OVERBOOKED
       if (totalBooked > plantData.stock) {
         SetError("Booked quantity exceeds available stock!");
       } else {
@@ -362,7 +362,7 @@ export function ProductModal({
     }
   }, [isOpen]);
   console.log(totalStock, "total stock");
-  // âœ… EARLIEST selectable rental start date
+  // ✅ EARLIEST selectable rental start date
   // const EARLIEST_START_DATE = useMemo(() => {
   //   const d = new Date();
   //   d.setDate(d.getDate() + INSTALLATION_LEAD_DAYS);
@@ -502,7 +502,7 @@ export function ProductModal({
       pricePerDay: result.pricePerDay,
 
       total: result.total,
-      totalFormatted: `Â£${result.total.toFixed(1)}`, // âœ… string (for UI)
+      totalFormatted: `£${result.total.toFixed(1)}`, // ✅ string (for UI)
 
       days: result.days,
       months: result.months,
@@ -512,17 +512,17 @@ export function ProductModal({
         `Size: ${size}`,
         `Plants: ${result.plantRange}`,
         `Rental Period: ${result.monthRange} months`,
-        `Size uplift (${size}): Ã—${result.sizeMultiplier.toFixed(2)}`,
-        `Volume discount for ${numPlants} plants: Ã—${result.volumeMultiplier.toFixed(2)}`,
-        `Rental term discount (${result.months} months): Ã—${result.rentalMultiplier.toFixed(2)}`,
-        `Â£${result.pricePerDay} per plant / day`,
+        `Size uplift (${size}): ×${result.sizeMultiplier.toFixed(2)}`,
+        `Volume discount for ${numPlants} plants: ×${result.volumeMultiplier.toFixed(2)}`,
+        `Rental term discount (${result.months} months): ×${result.rentalMultiplier.toFixed(2)}`,
+        `£${result.pricePerDay} per plant / day`,
         `Total days: ${result.days}`,
       ],
 
       monthlyEquivalent:
         result.months > 0
-          ? `Â£${(result.total / result.months).toFixed(2)}`
-          : "Â£0",
+          ? `£${(result.total / result.months).toFixed(2)}`
+          : "£0",
     };
   }, [size, numPlants, rentalDays]);
 
@@ -551,7 +551,7 @@ export function ProductModal({
         rentalDays,
 
         pricePerDay: pricing.pricePerDay,
-        totalPrice: pricing.total, // âœ… NUMBER
+        totalPrice: pricing.total, // ✅ NUMBER
 
         numPlants,
         country,
@@ -578,7 +578,7 @@ export function ProductModal({
   if (loading)
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-        Loadingâ€¦
+        Loading…
       </div>
     );
 
@@ -704,10 +704,10 @@ export function ProductModal({
 
         <div className="mt-6 border-t pt-4">
           <p>
-            Total: <b>Â£{pricing.total}</b>
+            Total: <b>£{pricing.total}</b>
           </p>
           <p className="text-sm text-muted-foreground">
-            Â£{pricing.pricePerDay}/day â€¢ {rentalMonths} months
+            £{pricing.pricePerDay}/day • {rentalMonths} months
           </p>
         </div>
         <div className="mt-2 mb-4 text-sm text-muted-foreground">
@@ -763,4 +763,3 @@ export function ProductModal({
     </div>
   );
 }
- 
