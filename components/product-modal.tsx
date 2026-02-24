@@ -530,9 +530,17 @@ export function ProductModal({
   const isCountyValid = ALLOWED_COUNTIES.includes(county);
 
   const canAddToCart =
-    rentalDays >= MIN_RENTAL_DAYS && numPlants >= 3 && startDate && endDate;
+    rentalDays >= MIN_RENTAL_DAYS &&
+    numPlants >= 3 &&
+    startDate &&
+    endDate &&
+    county;
 
   const handleAddToCart = async () => {
+    if (!county) {
+      ErrorToast("Please select county");
+      return;
+    }
     if (!canAddToCart) {
       ErrorToast("Please complete all required fields");
       return;
