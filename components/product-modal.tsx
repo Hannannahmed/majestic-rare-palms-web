@@ -468,14 +468,18 @@ const months = rentalMonths;
       });
     }
     const dailyTotal = pricePerPlantPerDay * numPlants;
-    const subTotal = dailyTotal * rentalDays;
+   const sizeMultiplier = getSizeMultiplier(size);
+const volumeMultiplier = getVolumeMultiplier(numPlants);
+const rentalMultiplier = getRentalMultiplier(months);
 
-    // round to 1 decimal but KEEP number
-    const total = Math.round(subTotal * 10) / 10;
+const subTotal =
+  dailyTotal *
+  rentalDays *
+  sizeMultiplier *
+  volumeMultiplier *
+  rentalMultiplier;
 
-    const sizeMultiplier = getSizeMultiplier(size);
-    const volumeMultiplier = getVolumeMultiplier(numPlants);
-    const rentalMultiplier = getRentalMultiplier(months);
+const total = Math.round(subTotal * 10) / 10;
 
     return {
       pricePerDay: pricePerPlantPerDay,
