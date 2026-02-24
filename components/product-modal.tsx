@@ -450,8 +450,7 @@ export function ProductModal({
       };
     }
 
-    const months = Math.max(1, Math.ceil(rentalDays / 30));
-
+const months = rentalMonths;
     const monthRange = getMonthRange(months);
     const plantRange = getPlantRange(numPlants);
 
