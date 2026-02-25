@@ -285,20 +285,13 @@ export function ProductModal({
   const [postcode, setPostcode] = useState("");
   const [isAdded, setIsAdded] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
-  // text
-  // useEffect(() => {
-  //   if (!startDate) {
-  //     setInstallationDate(null);
-  //     return;
-  //   }
-
-  //   const minInstallDate = new Date(startDate);
-  //   minInstallDate.setDate(minInstallDate.getDate() + INSTALLATION_LEAD_DAYS);
-
-  //   if (!installationDate || installationDate < minInstallDate) {
-  //     setInstallationDate(minInstallDate);
-  //   }
-  // }, [startDate]);
+  useEffect(() => {
+    if (!existingCartItem && !startDate) {
+      const defaultStart = new Date();
+      defaultStart.setDate(defaultStart.getDate() + 14); // 14 din ahead default
+      setStartDate(defaultStart);
+    }
+  }, [existingCartItem, startDate]);
 
   useEffect(() => {
     if (existingCartItem) {
@@ -361,7 +354,7 @@ export function ProductModal({
       setIsAdded(false);
     }
   }, [isOpen]);
-  console.log(totalStock, "total stock");
+
   // ✅ EARLIEST selectable rental start date
   // const EARLIEST_START_DATE = useMemo(() => {
   //   const d = new Date();
@@ -450,7 +443,7 @@ export function ProductModal({
       };
     }
 
-const months = rentalMonths;
+    const months = rentalMonths;
     const monthRange = getMonthRange(months);
     const plantRange = getPlantRange(numPlants);
 
@@ -468,18 +461,18 @@ const months = rentalMonths;
       });
     }
     const dailyTotal = pricePerPlantPerDay * numPlants;
-   const sizeMultiplier = getSizeMultiplier(size);
-const volumeMultiplier = getVolumeMultiplier(numPlants);
-const rentalMultiplier = getRentalMultiplier(months);
+    const sizeMultiplier = getSizeMultiplier(size);
+    const volumeMultiplier = getVolumeMultiplier(numPlants);
+    const rentalMultiplier = getRentalMultiplier(months);
 
-const subTotal =
-  dailyTotal *
-  rentalDays *
-  sizeMultiplier *
-  volumeMultiplier *
-  rentalMultiplier;
+    const subTotal =
+      dailyTotal *
+      rentalDays *
+      sizeMultiplier *
+      volumeMultiplier *
+      rentalMultiplier;
 
-const total = Math.round(subTotal * 10) / 10;
+    const total = Math.round(subTotal * 10) / 10;
 
     return {
       pricePerDay: pricePerPlantPerDay,
