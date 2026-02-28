@@ -465,13 +465,13 @@ console.log(existingCartItem,"existingCartItem")
     const volumeMultiplier = getVolumeMultiplier(numPlants);
     const rentalMultiplier = getRentalMultiplier(months);
 
-    const subTotal =
-      dailyTotal *
-      rentalDays *
-      sizeMultiplier *
-      volumeMultiplier *
-      rentalMultiplier;
-
+    // const subTotal =
+    //   dailyTotal *
+    //   rentalDays *
+    //   sizeMultiplier *
+    //   volumeMultiplier *
+    //   rentalMultiplier;
+const subTotal = dailyTotal * rentalDays;
     const total = Math.round(subTotal * 10) / 10;
 
     return {
@@ -581,8 +581,10 @@ console.log(existingCartItem,"existingCartItem")
   if (!isOpen) return null;
   if (loading)
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-        Loading…
+      <div className="fixed inset-0 bg-white/50 flex items-center justify-center">
+     <div className="col-span-full flex justify-center items-center py-20">
+    <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
+  </div>
       </div>
     );
 
