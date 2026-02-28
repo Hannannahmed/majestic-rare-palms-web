@@ -465,13 +465,13 @@ console.log(existingCartItem,"existingCartItem")
     const volumeMultiplier = getVolumeMultiplier(numPlants);
     const rentalMultiplier = getRentalMultiplier(months);
 
-    // const subTotal =
-    //   dailyTotal *
-    //   rentalDays *
-    //   sizeMultiplier *
-    //   volumeMultiplier *
-    //   rentalMultiplier;
-const subTotal = dailyTotal * rentalDays;
+    const subTotal =
+      dailyTotal *
+      rentalDays *
+      sizeMultiplier *
+      volumeMultiplier *
+      rentalMultiplier;
+
     const total = Math.round(subTotal * 10) / 10;
 
     return {
