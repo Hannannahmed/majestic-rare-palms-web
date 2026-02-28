@@ -11,7 +11,7 @@ export interface CartItem {
 
   startDate: string;
   endDate: string;
-  country: string;
+  county: string;
   rentalDays: number;
 
   pricePerDay: number;
