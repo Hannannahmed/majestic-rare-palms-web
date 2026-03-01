@@ -420,72 +420,74 @@ console.log(existingCartItem,"existingCartItem")
     return "21-25";
   }
 
-  function calculateSheetPrice({
-    size,
-    numPlants,
-    rentalDays,
-  }: {
-    size: "small" | "medium" | "large";
-    numPlants: number;
-    rentalDays: number;
-  }) {
-    if (rentalDays === 0) {
-      return {
-        pricePerDay: 0,
-        total: 0,
-        days: 0,
-        months: 0,
-        monthRange: "",
-        plantRange: "",
-        sizeMultiplier: 1,
-        volumeMultiplier: 1,
-        rentalMultiplier: 1,
-      };
-    }
-
-    const months = rentalMonths;
-    const monthRange = getMonthRange(months);
-    const plantRange = getPlantRange(numPlants);
-
-    // const pricePerPlantPerDay = PRICE_TABLE[size][monthRange][plantRange];
-
-    const sizeTable = PRICE_TABLE[size];
-    const monthTable = sizeTable?.[monthRange];
-    const pricePerPlantPerDay = monthTable?.[plantRange];
-
-    if (!pricePerPlantPerDay) {
-      console.error("Pricing lookup failed:", {
-        size,
-        monthRange,
-        plantRange,
-      });
-    }
-    const dailyTotal = pricePerPlantPerDay * numPlants;
-    const sizeMultiplier = getSizeMultiplier(size);
-    const volumeMultiplier = getVolumeMultiplier(numPlants);
-    const rentalMultiplier = getRentalMultiplier(months);
-
-    const subTotal =
-      dailyTotal *
-      rentalDays *
-      sizeMultiplier *
-      volumeMultiplier *
-      rentalMultiplier;
-
-    const total = Math.round(subTotal * 10) / 10;
-
+ function calculateSheetPrice({
+  size,
+  numPlants,
+  rentalDays,
+}: {
+  size: "small" | "medium" | "large";
+  numPlants: number;
+  rentalDays: number;
+}) {
+  if (rentalDays === 0) {
     return {
-      pricePerDay: pricePerPlantPerDay,
-      total,
-      days: rentalDays,
-      months,
-      monthRange,
-      plantRange,
-      sizeMultiplier,
-      volumeMultiplier,
-      rentalMultiplier,
+      pricePerDay: 0,
+      total: 0,
+      days: 0,
+      months: 0,
+      monthRange: "",
+      plantRange: "",
+      sizeMultiplier: 1,
+      volumeMultiplier: 1,
+      rentalMultiplier: 1,
     };
   }
+
+  const months = rentalMonths;
+  const monthRange = getMonthRange(months);
+  const plantRange = getPlantRange(numPlants);
+
+  const pricePerPlantPerDay =
+    PRICE_TABLE[size][monthRange][plantRange];
+
+  if (!pricePerPlantPerDay) {
+    console.error("Pricing lookup failed:", {
+      size,
+      monthRange,
+      plantRange,
+    });
+  }
+
+  const total =
+    Number((pricePerPlantPerDay * numPlants * rentalDays).toFixed(2));
+
+  return {
+    pricePerDay: pricePerPlantPerDay,
+    total,
+    days: rentalDays,
+    months,
+    monthRange,
+    plantRange,
+
+    // sirf display ke liye (apply nahi ho rahe)
+    sizeMultiplier:
+      size === "small" ? 0.7 : size === "large" ? 1.2 : 1,
+
+    volumeMultiplier:
+      numPlants <= 5
+        ? 0.85
+        : numPlants <= 10
+        ? 0.85 * 0.85
+        : 1,
+
+    rentalMultiplier:
+      months >= 12
+        ? 0.76
+        : months >= 6
+        ? 0.92
+        : 1,
+  };
+}
 
   const pricing = useMemo(() => {
     const result = calculateSheetPrice({
