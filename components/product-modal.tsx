@@ -205,7 +205,7 @@ const PRICE_TABLE = {
     },
   },
 };
-const BASE_PRICE = 5.0; // Change this one value → all prices update automatically
+const BASE_PRICE = 5; // Change this one value → all prices update automatically
 
 // Volume discount: each 5-plant slab gives 15% off
 function getVolumeMultiplier(numPlants: number) {
@@ -464,7 +464,7 @@ export function ProductModal({
     const total = pricePerPlantPerDay * numPlants * rentalDays;
 
     return {
-      pricePerDay: pricePerPlantPerDay.toFixed(1),
+      pricePerDay: (Math.round(pricePerPlantPerDay * 10) / 10).toFixed(1),
       total: Number(total.toFixed(2)),
       monthlyEquivalent: `£${(total / rentalMonths).toFixed(2)}`,
       breakdown: [
@@ -472,7 +472,7 @@ export function ProductModal({
         `Size (${size}): ×${sizeMult}`,
         `Volume (${numPlants} plants): ×${volumeMult.toFixed(4)}`,
         `Rental term (${rentalMonths} mo): ×${rentalMult}`,
-        `Price per plant/day: £${pricePerPlantPerDay.toFixed(1)}`,
+        `Price per plant/day: £${(Math.round(pricePerPlantPerDay * 10) / 10).toFixed(1)}`,
         `Total: £${pricePerPlantPerDay.toFixed(1)} × ${numPlants} plants × ${rentalDays} days`,
       ],
     };
