@@ -205,7 +205,7 @@ const PRICE_TABLE = {
     },
   },
 };
-const BASE_PRICE = 5; // Change this one value → all prices update automatically
+const BASE_PRICE = 4.5; // Change this one value → all prices update automatically
 
 // Volume discount: each 5-plant slab gives 15% off
 function getVolumeMultiplier(numPlants: number) {
