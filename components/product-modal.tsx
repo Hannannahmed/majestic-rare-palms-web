@@ -205,28 +205,29 @@ const PRICE_TABLE = {
     },
   },
 };
-const BASE_PRICE = 4.5;
+const BASE_PRICE = 5.0; // Change this one value → all prices update automatically
 
+// Volume discount: each 5-plant slab gives 15% off
 function getVolumeMultiplier(numPlants: number) {
-  const slabs = Math.floor(numPlants / 5);
-  let multiplier = 1;
-  for (let i = 0; i < slabs; i++) {
-    multiplier *= 0.85;
-  }
-  return multiplier;
+  const slabs = Math.floor((numPlants - 1) / 5); // 1-5=0 slabs, 6-10=1 slab, etc.
+  return Math.pow(0.85, slabs);
 }
 
+// Rental duration multiplier (from Excel Sheet3)
 function getRentalMultiplier(months: number) {
-  // client example: 76% = 0.76
-  if (months >= 12) return 0.76;
-  if (months >= 6) return 0.9;
-  return 1;
+  if (months <= 1) return 1.25;
+  if (months <= 3) return 1.1;
+  if (months <= 6) return 1.0;
+  if (months <= 12) return 0.92;
+  if (months <= 18) return 0.84;
+  return 0.76;
 }
 
+// Size multiplier (from Excel Sheet3)
 function getSizeMultiplier(size: "small" | "medium" | "large") {
   if (size === "small") return 0.7;
   if (size === "large") return 1.2;
-  return 1;
+  return 1.0;
 }
 
 function getLockedClientPrice(
@@ -265,7 +266,7 @@ export function ProductModal({
 }: any) {
   const router = useRouter();
   const { addToCart, setIsCartOpen, isCartOpen, updateCartItem } = useCart();
-console.log(existingCartItem,"existingCartItem")
+  console.log(existingCartItem, "existingCartItem");
   const [plantDetails, setPlantDetails] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [country, setCountry] = useState("");
@@ -420,123 +421,65 @@ console.log(existingCartItem,"existingCartItem")
     return "21-25";
   }
   function getRentalMultiplier(months: number) {
-  if (months === 1) return 1.25;
-  if (months > 1 && months <= 3) return 1.10;
-  if (months > 3 && months <= 6) return 1.0;
-  if (months > 6 && months <= 12) return 0.92;
-  if (months > 12 && months <= 18) return 0.84;
-  return 0.76;
-}
-function getVolumeMultiplier(numPlants: number) {
-  const slabs = Math.floor((numPlants - 1) / 5);
-  return Math.pow(0.85, slabs);
-}
+    if (months === 1) return 1.25;
+    if (months > 1 && months <= 3) return 1.1;
+    if (months > 3 && months <= 6) return 1.0;
+    if (months > 6 && months <= 12) return 0.92;
+    if (months > 12 && months <= 18) return 0.84;
+    return 0.76;
+  }
+  function getVolumeMultiplier(numPlants: number) {
+    if (numPlants <= 3) return Math.pow(0.85, 0); // 1.0
+    if (numPlants <= 5) return Math.pow(0.85, 1); // 0.85
+    if (numPlants <= 10) return Math.pow(0.85, 2); // 0.7225
+    if (numPlants <= 15) return Math.pow(0.85, 3); // 0.614125
+    if (numPlants <= 20) return Math.pow(0.85, 4); // 0.52200625
+    return Math.pow(0.85, 5); // 0.443705...
+  }
   function getSizeMultiplier(size: "small" | "medium" | "large") {
-  if (size === "small") return 0.70;
-  if (size === "large") return 1.20;
-  return 1;
-}
-function calculateSheetPrice({
-  size,
-  numPlants,
-  rentalDays,
-}: {
-  size: "small" | "medium" | "large";
-  numPlants: number;
-  rentalDays: number;
-}) {
-  if (!rentalDays) {
+    if (size === "small") return 0.7;
+    if (size === "large") return 1.2;
+    return 1;
+  }
+  function calculatePrice({
+    size,
+    numPlants,
+    rentalDays,
+    rentalMonths,
+  }: {
+    size: "small" | "medium" | "large";
+    numPlants: number;
+    rentalDays: number;
+    rentalMonths: number;
+  }) {
+    if (!rentalDays || !rentalMonths) {
+      return { pricePerDay: 0, total: 0, monthlyEquivalent: "£0" };
+    }
+
+    const rentalMult = getRentalMultiplier(rentalMonths);
+    const volumeMult = getVolumeMultiplier(numPlants);
+    const sizeMult = getSizeMultiplier(size);
+
+    const pricePerPlantPerDay = BASE_PRICE * rentalMult * volumeMult * sizeMult;
+    const total = pricePerPlantPerDay * numPlants * rentalDays;
+
     return {
-      pricePerDay: 0,
-      total: 0,
-      months: 0,
-      sizeMultiplier: 1,
-      volumeMultiplier: 1,
-      rentalMultiplier: 1,
-      monthRange: "",
-      plantRange: "",
+      pricePerDay: pricePerPlantPerDay.toFixed(1),
+      total: Number(total.toFixed(2)),
+      monthlyEquivalent: `£${(total / rentalMonths).toFixed(2)}`,
+      breakdown: [
+        `Base price: £${BASE_PRICE}`,
+        `Size (${size}): ×${sizeMult}`,
+        `Volume (${numPlants} plants): ×${volumeMult.toFixed(4)}`,
+        `Rental term (${rentalMonths} mo): ×${rentalMult}`,
+        `Price per plant/day: £${pricePerPlantPerDay.toFixed(1)}`,
+        `Total: £${pricePerPlantPerDay.toFixed(1)} × ${numPlants} plants × ${rentalDays} days`,
+      ],
     };
   }
-
-  const months = rentalMonths;
-  const monthRange = getMonthRange(months);
-  const plantRange = getPlantRange(numPlants);
-
-const originalSheetPrice =
-  PRICE_TABLE[size]?.[monthRange]?.[plantRange] || 0;
-
-const adjustmentFactor = BASE_PRICE / 5;
-
-const pricePerPlantPerDay = Number(
-  (originalSheetPrice * adjustmentFactor).toFixed(1)
-);
-  // multipliers sirf UI display ke liye
-  const sizeMultiplier = size === "small" ? 0.7 : size === "large" ? 1.2 : 1;
-  const volumeSlabs = Math.floor((numPlants - 1) / 5);
-  const volumeMultiplier = Math.pow(0.85, volumeSlabs);
-
-  let rentalMultiplier = 1;
-  if (months > 18) rentalMultiplier = 0.76;
-  else if (months > 12) rentalMultiplier = 0.84;
-  else if (months > 6) rentalMultiplier = 0.92;
-  else if (months > 3) rentalMultiplier = 1;
-  else if (months > 1) rentalMultiplier = 1.10;
-  else rentalMultiplier = 1.25;
-
-const total = Number(
-  (pricePerPlantPerDay * numPlants * rentalDays).toFixed(2)
-);
-  return {
-    pricePerDay: pricePerPlantPerDay,
-    total,
-    months,
-    sizeMultiplier,
-    volumeMultiplier,
-    rentalMultiplier,
-    monthRange,
-    plantRange,
-  };
-}
-const pricing = useMemo(() => {
-  const months = rentalMonths;
-  const monthRange = getMonthRange(months);
-  const plantRange = getPlantRange(numPlants);
-
-  const originalSheetPrice =
-    PRICE_TABLE[size]?.[monthRange]?.[plantRange] || 0;
-
-  const adjustmentFactor = BASE_PRICE / 5;
-
-  const rawPrice = originalSheetPrice * adjustmentFactor;
-
-  const pricePerPlantPerDay = Number(rawPrice.toFixed(1));
-
-  const total = Number(
-    (pricePerPlantPerDay * numPlants * rentalDays).toFixed(2)
-  );
-
-  return {
-    pricePerDay: pricePerPlantPerDay,
-    total,
-    months,
-
-    breakdown: [
-      `Base price: £${BASE_PRICE.toFixed(1)}`,
-      `Selected size: ${size}`,
-      `Quantity range: ${plantRange} plants`,
-      `Rental term range: ${monthRange} months`,
-      `Base price adjustment factor: ×${adjustmentFactor.toFixed(2)}`,
-      `Final price per plant per day: £${pricePerPlantPerDay}`,
-      `Number of plants: ${numPlants}`,
-      `Total rental days: ${rentalDays}`,
-    ],
-
-    monthlyEquivalent:
-      months > 0
-        ? `£${(total / months).toFixed(2)}`
-        : "£0",
-  };
-}, [size, numPlants, rentalDays, rentalMonths]);
+  const pricing = useMemo(() => {
+    return calculatePrice({ size, numPlants, rentalDays, rentalMonths });
+  }, [size, numPlants, rentalDays, rentalMonths]);
 
   const [county, setCounty] = useState("");
   const isCountyValid = ALLOWED_COUNTIES.includes(county);
@@ -598,9 +541,9 @@ const pricing = useMemo(() => {
   if (loading)
     return (
       <div className="fixed inset-0 bg-white/50 flex items-center justify-center">
-     <div className="col-span-full flex justify-center items-center py-20">
-    <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
-  </div>
+        <div className="col-span-full flex justify-center items-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
+        </div>
       </div>
     );
 
@@ -734,11 +677,13 @@ const pricing = useMemo(() => {
         </div>
         <div className="mt-2 mb-4 text-sm text-muted-foreground">
           <p className="font-semibold">Price breakdown:</p>
-          <ul className="list-disc ml-5">
-            {pricing.breakdown.map((line, idx) => (
-              <li key={idx}>{line}</li>
-            ))}
-          </ul>
+          {pricing?.breakdown && pricing.breakdown.length > 0 && (
+            <ul className="list-disc ml-5">
+              {pricing.breakdown.map((line, idx) => (
+                <li key={idx}>{line}</li>
+              ))}
+            </ul>
+          )}
           <p className="mt-1">
             Monthly equivalent: {pricing.monthlyEquivalent}/month
           </p>
