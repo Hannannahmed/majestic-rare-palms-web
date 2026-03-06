@@ -473,7 +473,7 @@ export function ProductModal({
         `Volume (${numPlants} plants): ×${volumeMult.toFixed(4)}`,
         `Rental term (${rentalMonths} mo): ×${rentalMult}`,
         `Price per plant/day: £${(Math.round(pricePerPlantPerDay * 10) / 10).toFixed(1)}`,
-        `Total: £${pricePerPlantPerDay.toFixed(1)} × ${numPlants} plants × ${rentalDays} days`,
+        `Total: £${(Math.round(pricePerPlantPerDay * 10) / 10).toFixed(1)} × ${numPlants} plants × ${rentalDays} days`,
       ],
     };
   }
