@@ -461,7 +461,9 @@ export function ProductModal({
     const sizeMult = getSizeMultiplier(size);
 
     const pricePerPlantPerDay = BASE_PRICE * rentalMult * volumeMult * sizeMult;
-    const total = pricePerPlantPerDay * numPlants * rentalDays;
+    const roundedPrice = Math.round(pricePerPlantPerDay * 10) / 10;
+
+     const total = roundedPrice * numPlants * rentalDays;
 
     return {
       pricePerDay: (Math.round(pricePerPlantPerDay * 10) / 10).toFixed(1),
